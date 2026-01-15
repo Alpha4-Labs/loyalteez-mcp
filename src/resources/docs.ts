@@ -102,16 +102,16 @@ export function listDocResources(docsPath?: string): Resource[] {
 }
 
 /**
- * Read a documentation resource by URI
+ * Read a documentation resource by URI (lazy loaded and cached)
  */
-export function readDocResource(uri: string): {
+export function readDocResource(uri: string, docsPath?: string): {
   contents: Array<{
     uri: string;
     mimeType: string;
     text: string;
   }>;
 } {
-  const index = getDocIndex();
+  const index = getDocIndex(docsPath);
   const doc = getDocByURI(uri, index);
 
   if (!doc) {
@@ -143,6 +143,24 @@ export function readDocResource(uri: string): {
       },
     ],
   };
+}
+
+/**
+ * Clear documentation cache (useful for testing or forced reloads)
+ */
+export function clearDocCache(): void {
+  cache.clearCache();
+}
+
+/**
+ * Get cache statistics (for monitoring)
+ */
+export function getDocCacheStats(): {
+  cached: boolean;
+  age: number | null;
+  docCount: number;
+} {
+  return cache.getCacheStats();
 }
 
 /**

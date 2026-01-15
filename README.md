@@ -16,11 +16,16 @@ The Loyalteez MCP Server provides AI tools (Claude, ChatGPT, Cursor, etc.) with 
 
 ## Features
 
+- **27 Tools**: Comprehensive toolset for loyalty program integration
+- **11 Resources**: Reference materials including contracts, SDK docs, error codes, and more
 - **Program Design**: AI-powered loyalty program generation with event structures, tiers, and implementation code
-- **Event Management**: Create and track infinitely flexible custom events
+- **Event Management**: Create and track infinitely flexible custom events with channel constraints and domain validation
 - **User Identity**: Resolve platform identities to Loyalteez wallets
-- **Engagement Services**: Streak tracking, leaderboards, and achievements
-- **Documentation Access**: Full developer docs available as MCP resources
+- **Engagement Services**: Streak tracking, leaderboards, achievements, and activity logging
+- **Webhook Support**: Validate signatures and generate receiver code for any framework
+- **Mobile Examples**: React Native, iOS, Android, and Flutter integration examples
+- **Code Generation**: Generate complete implementations with TypeScript types, error handling, and tests
+- **Documentation Access**: Full developer docs available as MCP resources (lazy-loaded and cached)
 - **Platform Support**: Discord, Telegram, Web, Shopify, Gaming, and more
 
 ## Scope
