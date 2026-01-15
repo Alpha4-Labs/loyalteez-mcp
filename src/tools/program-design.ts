@@ -383,97 +383,532 @@ function generateImplementationCode(
 }
 
 function generateDiscordBotCode(program: ProgramDesign): string {
+  const brandId = program.brandId || 'YOUR_BRAND_ID';
+  
   return `// Discord Bot Implementation for ${program.name}
-const { Client, GatewayIntentBits } = require('discord.js');
+// TypeScript types and error handling included
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
+import { Client, GatewayIntentBits, Events, Message } from 'discord.js';
 
-client.on('ready', () => {
-  console.log('Loyalty bot ready!');
-});
-
-// Track event function
-async function trackEvent(eventType, userId) {
-  const response = await fetch('https://api.loyalteez.app/loyalteez-api/manual-event', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      brandId: 'YOUR_BRAND_ID',
-      eventType: eventType,
-      userIdentifier: {
-        platform: 'discord',
-        platformUserId: userId
-      }
-    })
-  });
-  return await response.json();
+interface TrackEventResult {
+  success: boolean;
+  rewardAmount?: number;
+  eventId?: string;
+  error?: string;
 }
 
-// Example commands for your events:
-// ${program.events.map(e => `// ${e.name}: ${e.description}`).join('\n// ')}
+class LoyaltyBot {
+  private client: Client;
+  private brandId: string;
+  private apiUrl = 'https://api.loyalteez.app';
 
-client.login(process.env.DISCORD_TOKEN);`;
+  constructor(brandId: string) {
+    this.brandId = brandId;
+    this.client = new Client({ 
+      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] 
+    });
+    this.setupEventHandlers();
+  }
+
+  private setupEventHandlers(): void {
+    this.client.once(Events.ClientReady, () => {
+      console.log('Loyalty bot ready!');
+    });
+
+    this.client.on(Events.MessageCreate, async (message: Message) => {
+      // Handle message-based events
+      if (message.author.bot) return;
+      
+      // Example: Track helpful answers (you can customize this)
+      // await this.trackEvent('helpful_answer', message.author.id);
+    });
+  }
+
+  async trackEvent(eventType: string, userId: string, metadata?: Record<string, unknown>): Promise<TrackEventResult> {
+    try {
+      const response = await fetch(\`\${this.apiUrl}/loyalteez-api/manual-event\`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brandId: this.brandId,
+          eventType: eventType,
+          userIdentifier: {
+            platform: 'discord',
+            platformUserId: userId
+          },
+          metadata: metadata || {}
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(\`API error: \${error.message || response.statusText}\`);
+      }
+
+      const result = await response.json();
+      return {
+        success: result.success || false,
+        rewardAmount: result.rewardAmount,
+        eventId: result.eventId,
+      };
+    } catch (error) {
+      console.error(\`Error tracking event \${eventType}:\`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  async start(): Promise<void> {
+    await this.client.login(process.env.DISCORD_TOKEN);
+  }
+}
+
+// Initialize bot
+const bot = new LoyaltyBot('${brandId}');
+bot.start().catch(console.error);
+
+// Example commands for your events:
+${program.events.map(e => `// ${e.name}: ${e.description}`).join('\n')}
+
+// Test file: bot.test.ts
+\`\`\`typescript
+import { describe, it, expect, vi } from 'vitest';
+import { LoyaltyBot } from './bot';
+
+describe('LoyaltyBot', () => {
+  it('should track events successfully', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, rewardAmount: 100 }),
+    });
+
+    const bot = new LoyaltyBot('test-brand-id');
+    const result = await bot.trackEvent('test_event', '123456');
+
+    expect(result.success).toBe(true);
+    expect(result.rewardAmount).toBe(100);
+  });
+
+  it('should handle API errors gracefully', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      statusText: 'Bad Request',
+      json: async () => ({ message: 'Invalid event type' }),
+    });
+
+    const bot = new LoyaltyBot('test-brand-id');
+    const result = await bot.trackEvent('invalid_event', '123456');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBeDefined();
+  });
+});
+\`\`\``;
 }
 
 function generateTelegramBotCode(program: ProgramDesign): string {
+  const brandId = program.brandId || 'YOUR_BRAND_ID';
+  
   return `// Telegram Bot Implementation for ${program.name}
-const { Telegraf } = require('telegraf');
+// TypeScript types and error handling included
 
-const bot = new Telegraf(process.env.TELEGRAM_TOKEN);
+import { Telegraf, Context } from 'telegraf';
 
-// Track event function
-async function trackEvent(eventType, userId) {
-  const response = await fetch('https://api.loyalteez.app/loyalteez-api/manual-event', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      brandId: 'YOUR_BRAND_ID',
-      eventType: eventType,
-      userIdentifier: {
-        platform: 'telegram',
-        platformUserId: userId.toString()
-      }
-    })
-  });
-  return await response.json();
+interface TrackEventResult {
+  success: boolean;
+  rewardAmount?: number;
+  eventId?: string;
+  error?: string;
 }
 
-// Example commands:
-// ${program.events.map(e => `// ${e.name}: ${e.description}`).join('\n// ')}
+class LoyaltyTelegramBot {
+  private bot: Telegraf;
+  private brandId: string;
+  private apiUrl = 'https://api.loyalteez.app';
 
-bot.launch();`;
+  constructor(brandId: string, token: string) {
+    this.brandId = brandId;
+    this.bot = new Telegraf(token);
+    this.setupCommands();
+  }
+
+  private setupCommands(): void {
+    this.bot.command('checkin', async (ctx: Context) => {
+      try {
+        const result = await this.trackEvent('daily_checkin', ctx.from?.id.toString() || '');
+        if (result.success) {
+          await ctx.reply(\`✅ Check-in successful! You earned \${result.rewardAmount} LTZ!\`);
+        } else {
+          await ctx.reply(\`❌ Check-in failed: \${result.error}\`);
+        }
+      } catch (error) {
+        await ctx.reply('❌ An error occurred. Please try again later.');
+        console.error('Check-in error:', error);
+      }
+    });
+
+    this.bot.command('balance', async (ctx: Context) => {
+      // Implement balance check
+      await ctx.reply('Balance feature coming soon!');
+    });
+  }
+
+  async trackEvent(eventType: string, userId: string, metadata?: Record<string, unknown>): Promise<TrackEventResult> {
+    try {
+      const response = await fetch(\`\${this.apiUrl}/loyalteez-api/manual-event\`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brandId: this.brandId,
+          eventType: eventType,
+          userIdentifier: {
+            platform: 'telegram',
+            platformUserId: userId
+          },
+          metadata: metadata || {}
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(\`API error: \${error.message || response.statusText}\`);
+      }
+
+      const result = await response.json();
+      return {
+        success: result.success || false,
+        rewardAmount: result.rewardAmount,
+        eventId: result.eventId,
+      };
+    } catch (error) {
+      console.error(\`Error tracking event \${eventType}:\`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  async start(): Promise<void> {
+    await this.bot.launch();
+    console.log('Telegram bot started!');
+  }
+}
+
+// Initialize bot
+const bot = new LoyaltyTelegramBot('${brandId}', process.env.TELEGRAM_TOKEN!);
+bot.start().catch(console.error);
+
+// Example events:
+${program.events.map(e => `// ${e.name}: ${e.description}`).join('\n')}
+
+// Test file: bot.test.ts
+\`\`\`typescript
+import { describe, it, expect, vi } from 'vitest';
+import { LoyaltyTelegramBot } from './bot';
+
+describe('LoyaltyTelegramBot', () => {
+  it('should track events successfully', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, rewardAmount: 50 }),
+    });
+
+    const bot = new LoyaltyTelegramBot('test-brand-id', 'test-token');
+    const result = await bot.trackEvent('daily_checkin', '123456');
+
+    expect(result.success).toBe(true);
+    expect(result.rewardAmount).toBe(50);
+  });
+});
+\`\`\``;
 }
 
 function generateWebSDKCode(program: ProgramDesign): string {
-  return `// Web SDK Implementation for ${program.name}
-<script src="https://api.loyalteez.app/sdk.js"></script>
-<script>
-  LoyalteezAutomation.init('YOUR_BRAND_ID');
+  const brandId = program.brandId || 'YOUR_BRAND_ID';
   
-  // Events are automatically tracked based on your configuration
-  // ${program.events.map(e => `// ${e.name}: ${e.description}`).join('\n  // ')}
-</script>`;
+  return `// Web SDK Implementation for ${program.name}
+// TypeScript types and error handling included
+
+// HTML
+<script src="https://api.loyalteez.app/sdk.js"></script>
+
+// TypeScript/JavaScript
+interface LoyaltyConfig {
+  brandId: string;
+  debug?: boolean;
+  autoDetect?: boolean;
+  onRewardReceived?: (reward: { amount: number; eventType: string }) => void;
+  onError?: (error: Error) => void;
+}
+
+class LoyaltyTracker {
+  private config: LoyaltyConfig;
+
+  constructor(config: LoyaltyConfig) {
+    this.config = config;
+    this.initialize();
+  }
+
+  private initialize(): void {
+    try {
+      LoyalteezAutomation.init(this.config.brandId, {
+        debug: this.config.debug || false,
+        autoDetect: this.config.autoDetect !== false,
+        onRewardReceived: (reward) => {
+          console.log(\`🎉 Earned \${reward.amount} LTZ for \${reward.eventType}!\`);
+          this.config.onRewardReceived?.(reward);
+        },
+        onError: (error) => {
+          console.error('Loyalty tracking error:', error);
+          this.config.onError?.(error);
+        },
+      });
+    } catch (error) {
+      console.error('Failed to initialize Loyalty SDK:', error);
+      this.config.onError?.(error instanceof Error ? error : new Error('Unknown error'));
+    }
+  }
+
+  trackEvent(eventType: string, metadata?: Record<string, unknown>): void {
+    try {
+      LoyalteezAutomation.track(eventType, {
+        userEmail: this.getUserEmail(),
+        metadata: metadata || {},
+      });
+    } catch (error) {
+      console.error(\`Error tracking event \${eventType}:\`, error);
+      this.config.onError?.(error instanceof Error ? error : new Error('Unknown error'));
+    }
+  }
+
+  private getUserEmail(): string {
+    // Implement your user email retrieval logic
+    // This is a placeholder
+    return 'user@example.com';
+  }
+}
+
+// Initialize tracker
+const loyaltyTracker = new LoyaltyTracker({
+  brandId: '${brandId}',
+  debug: process.env.NODE_ENV === 'development',
+  onRewardReceived: (reward) => {
+    // Show notification to user
+    showNotification(\`You earned \${reward.amount} LTZ!\`);
+  },
+  onError: (error) => {
+    // Handle errors gracefully
+    console.error('Loyalty error:', error);
+  },
+});
+
+// Events configured:
+${program.events.map(e => `// ${e.name}: ${e.description}`).join('\n')}
+
+// Test file: loyalty.test.ts
+\`\`\`typescript
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { LoyaltyTracker } from './loyalty';
+
+// Mock SDK
+global.LoyalteezAutomation = {
+  init: vi.fn(),
+  track: vi.fn(),
+};
+
+describe('LoyaltyTracker', () => {
+  let tracker: LoyaltyTracker;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    tracker = new LoyaltyTracker({
+      brandId: 'test-brand-id',
+      debug: false,
+    });
+  });
+
+  it('should initialize SDK on construction', () => {
+    expect(global.LoyalteezAutomation.init).toHaveBeenCalledWith(
+      'test-brand-id',
+      expect.any(Object)
+    );
+  });
+
+  it('should track events', () => {
+    tracker.trackEvent('test_event', { key: 'value' });
+    expect(global.LoyalteezAutomation.track).toHaveBeenCalledWith(
+      'test_event',
+      expect.objectContaining({
+        metadata: { key: 'value' },
+      })
+    );
+  });
+});
+\`\`\``;
 }
 
 function generateWebhookCode(program: ProgramDesign): string {
+  const brandId = program.brandId || 'YOUR_BRAND_ID';
+  
   return `// Webhook Handler for ${program.name}
 // POST endpoint: /webhooks/loyalteez
+// Includes signature verification and error handling
+
+import express from 'express';
+import crypto from 'crypto';
+
+const app = express();
+
+// Middleware to capture raw body for signature verification
+app.use('/webhooks/loyalteez', express.raw({ type: 'application/json' }));
+
+interface WebhookEvent {
+  type: string;
+  data: {
+    userEmail: string;
+    eventType?: string;
+    amount?: number;
+    [key: string]: unknown;
+  };
+}
+
+interface TrackEventResult {
+  success: boolean;
+  rewardAmount?: number;
+  eventId?: string;
+  error?: string;
+}
+
+async function trackEvent(
+  eventType: string,
+  userEmail: string,
+  metadata?: Record<string, unknown>
+): Promise<TrackEventResult> {
+  try {
+    const response = await fetch('https://api.loyalteez.app/loyalteez-api/manual-event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        brandId: '${brandId}',
+        eventType: eventType,
+        userEmail: userEmail,
+        metadata: metadata || {}
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Unknown error' }));
+      throw new Error(\`API error: \${error.message || response.statusText}\`);
+    }
+
+    const result = await response.json();
+    return {
+      success: result.success || false,
+      rewardAmount: result.rewardAmount,
+      eventId: result.eventId,
+    };
+  } catch (error) {
+    console.error(\`Error tracking event \${eventType}:\`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+function verifyWebhookSignature(
+  payload: Buffer,
+  signature: string,
+  secret: string
+): boolean {
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+  
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expectedSignature)
+  );
+}
 
 app.post('/webhooks/loyalteez', async (req, res) => {
-  const { eventType, userEmail, metadata } = req.body;
-  
-  const response = await fetch('https://api.loyalteez.app/loyalteez-api/manual-event', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      brandId: 'YOUR_BRAND_ID',
-      eventType: eventType,
-      userEmail: userEmail,
-      metadata: metadata
-    })
+  try {
+    const signature = req.headers['x-loyalteez-signature'] as string;
+    const webhookSecret = process.env.LOYALTEEZ_WEBHOOK_SECRET;
+
+    if (!signature || !webhookSecret) {
+      return res.status(401).json({ error: 'Missing signature or secret' });
+    }
+
+    // Verify signature
+    if (!verifyWebhookSignature(req.body as Buffer, signature, webhookSecret)) {
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
+
+    // Parse webhook payload
+    const event: WebhookEvent = JSON.parse((req.body as Buffer).toString());
+
+    // Process webhook event
+    switch (event.type) {
+      case 'reward.distributed':
+        console.log(\`User \${event.data.userEmail} earned \${event.data.amount} LTZ\`);
+        // Your reward handling logic
+        break;
+
+      case 'perk.redeemed':
+        console.log(\`User \${event.data.userEmail} redeemed perk\`);
+        // Your perk handling logic
+        break;
+
+      default:
+        console.log(\`Unhandled event type: \${event.type}\`);
+    }
+
+    res.json({ received: true });
+  } catch (error) {
+    console.error('Webhook error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Test file: webhook.test.ts
+\`\`\`typescript
+import { describe, it, expect, vi } from 'vitest';
+import request from 'supertest';
+import app from './app';
+
+describe('Webhook Handler', () => {
+  it('should verify webhook signature', async () => {
+    const payload = JSON.stringify({ type: 'test', data: {} });
+    const secret = 'test-secret';
+    const signature = crypto
+      .createHmac('sha256', secret)
+      .update(payload)
+      .digest('hex');
+
+    const response = await request(app)
+      .post('/webhooks/loyalteez')
+      .set('X-Loyalteez-Signature', signature)
+      .send(payload);
+
+    expect(response.status).toBe(200);
   });
-  
-  const result = await response.json();
-  res.json(result);
-});`;
+
+  it('should reject invalid signature', async () => {
+    const response = await request(app)
+      .post('/webhooks/loyalteez')
+      .set('X-Loyalteez-Signature', 'invalid-signature')
+      .send(JSON.stringify({ type: 'test', data: {} }));
+
+    expect(response.status).toBe(401);
+  });
+});
+\`\`\``;
 }

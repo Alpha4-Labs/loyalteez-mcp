@@ -26,6 +26,7 @@ import { registerIntegrationTools, handleProcessThirdPartyEvent } from './tools/
 import { registerPerksTools, handleListPerks, handleCheckPerkEligibility, handleRedeemPerk } from './tools/perks.js';
 import { registerAchievementTools, handleGetUserAchievements, handleUpdateAchievementProgress } from './tools/achievements.js';
 import { registerDiagnosticTools, handleHealthCheck } from './tools/diagnostics.js';
+import { registerWebhookTools, handleValidateWebhook, handleWebhookExample } from './tools/webhooks.js';
 
 // Resource imports
 import { initializeDocs, listDocResources, readDocResource, isDocResource } from './resources/docs.js';
@@ -37,6 +38,7 @@ import { listOAuthResources, readOAuthResource, isOAuthResource } from './resour
 import { listErrorResources, readErrorResource, isErrorResource } from './resources/errors.js';
 import { listRateLimitResources, readRateLimitResource, isRateLimitResource } from './resources/rate-limits.js';
 import { listSDKResources, readSDKResource, isSDKResource } from './resources/sdk.js';
+import { listWebhookResources, readWebhookResource, isWebhookResource } from './resources/webhooks.js';
 
 export class LoyalteezMCPServer {
   private server: Server;
@@ -94,6 +96,7 @@ export class LoyalteezMCPServer {
       tools.push(...registerPerksTools(this.apiClient));
       tools.push(...registerAchievementTools(this.apiClient));
       tools.push(...registerDiagnosticTools(this.apiClient));
+      tools.push(...registerWebhookTools(this.apiClient));
 
       return { tools };
     });
@@ -160,6 +163,10 @@ export class LoyalteezMCPServer {
             return await handleUpdateAchievementProgress(this.apiClient, args);
           case 'loyalteez_health_check':
             return await handleHealthCheck(this.apiClient, args);
+          case 'loyalteez_validate_webhook':
+            return await handleValidateWebhook(this.apiClient, args);
+          case 'loyalteez_webhook_example':
+            return await handleWebhookExample(this.apiClient, args);
           default:
             throw new Error(`Tool "${name}" not yet implemented`);
         }
@@ -189,6 +196,7 @@ export class LoyalteezMCPServer {
       resources.push(...listErrorResources());
       resources.push(...listRateLimitResources());
       resources.push(...listSDKResources());
+      resources.push(...listWebhookResources());
       return { resources };
     });
 
@@ -223,6 +231,9 @@ export class LoyalteezMCPServer {
         }
         if (isSDKResource(uri)) {
           return readSDKResource(uri);
+        }
+        if (isWebhookResource(uri)) {
+          return readWebhookResource(uri);
         }
 
         throw new Error(`Resource "${uri}" not found`);
