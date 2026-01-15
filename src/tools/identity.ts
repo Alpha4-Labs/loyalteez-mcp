@@ -10,6 +10,27 @@ import { getBrandId } from '../utils/brand-id.js';
 import { z } from 'zod';
 
 /**
+ * FUTURE: Batch Pregeneration Tool
+ * 
+ * This tool would allow pregenerating wallets for multiple users at once.
+ * Currently not implemented as single-user pregeneration covers most use cases.
+ * 
+ * If demand arises, implement as:
+ * - loyalteez_batch_pregenerate_users
+ * - Accepts array of { platform, platformUserId, platformUsername }
+ * - Returns array of { userIdentifier, walletAddress, status }
+ * 
+ * Example:
+ * {
+ *   "brandId": "0x...",
+ *   "users": [
+ *     { "platform": "discord", "platformUserId": "123", "platformUsername": "user1" },
+ *     { "platform": "discord", "platformUserId": "456", "platformUsername": "user2" }
+ *   ]
+ * }
+ */
+
+/**
  * Register identity tools
  */
 export function registerIdentityTool(apiClient: LoyalteezAPIClient): Tool[] {
