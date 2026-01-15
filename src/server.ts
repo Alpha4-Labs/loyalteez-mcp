@@ -25,6 +25,7 @@ import { registerDropTools, handleCreateDrop, handleClaimDrop } from './tools/dr
 import { registerIntegrationTools, handleProcessThirdPartyEvent } from './tools/integrations.js';
 import { registerPerksTools, handleListPerks, handleCheckPerkEligibility, handleRedeemPerk } from './tools/perks.js';
 import { registerAchievementTools, handleGetUserAchievements, handleUpdateAchievementProgress } from './tools/achievements.js';
+import { registerDiagnosticTools, handleHealthCheck } from './tools/diagnostics.js';
 
 // Resource imports
 import { initializeDocs, listDocResources, readDocResource, isDocResource } from './resources/docs.js';
@@ -92,6 +93,7 @@ export class LoyalteezMCPServer {
       tools.push(...registerIntegrationTools(this.apiClient));
       tools.push(...registerPerksTools(this.apiClient));
       tools.push(...registerAchievementTools(this.apiClient));
+      tools.push(...registerDiagnosticTools(this.apiClient));
 
       return { tools };
     });
@@ -156,6 +158,8 @@ export class LoyalteezMCPServer {
             return await handleGetUserAchievements(this.apiClient, args);
           case 'loyalteez_update_achievement_progress':
             return await handleUpdateAchievementProgress(this.apiClient, args);
+          case 'loyalteez_health_check':
+            return await handleHealthCheck(this.apiClient, args);
           default:
             throw new Error(`Tool "${name}" not yet implemented`);
         }
