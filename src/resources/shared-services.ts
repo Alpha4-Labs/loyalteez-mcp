@@ -53,6 +53,13 @@ const SHARED_SERVICES = {
       },
       categories: ['discount', 'exclusive', 'merch', 'digital', 'experience', 'general'],
     },
+    roleBonuses: {
+      description: 'Discord role-based reward multipliers and flat bonuses',
+      multiplierRange: '1.0 to 5.0 (1.0 = no bonus, 2.0 = double rewards)',
+      flatBonusRange: '0 to 1,000 LTZ per reward',
+      stackingModes: ['multiplicative', 'additive', 'highest_only'],
+      note: 'Role bonuses apply automatically to all rewards earned by users with that role. Configure via Discord /config role-bonus or Partner Portal.',
+    },
   },
   healthCheck: 'GET /health',
 };

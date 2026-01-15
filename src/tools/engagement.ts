@@ -332,6 +332,8 @@ function calculateRewardTool(_apiClient: LoyalteezAPIClient): Tool {
     name: 'loyalteez_calculate_reward',
     description: `Calculate final reward with role multipliers & bonuses. Returns breakdown of base reward, multipliers, and final amount.
 
+Supports Discord role bonuses (multipliers 1.0-5.0x and flat bonuses 0-1000 LTZ). Multiple roles combine based on stacking mode (multiplicative, additive, highest_only).
+
 See also: loyalteez://docs/shared-services/tier-service`,
     inputSchema: {
       type: 'object',

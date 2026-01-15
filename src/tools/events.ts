@@ -68,7 +68,7 @@ See also: loyalteez://docs/guides/custom-events`,
             },
             maxClaimsPerUser: {
               type: 'number',
-              description: 'Maximum times a user can claim (1 for one-time, higher for repeatable)',
+              description: 'Maximum times a user can claim (1 for one-time, higher for repeatable). Use 999999 or -1 for unlimited (both normalized to unlimited). For reaction drops, this becomes the total drop limit.',
             },
             cooldownHours: {
               type: 'number',
