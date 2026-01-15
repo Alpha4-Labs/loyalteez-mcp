@@ -33,6 +33,9 @@ import { listNetworkResources, readNetworkResource, isNetworkResource } from './
 import { listEventTypeResources, readEventTypeResource, isEventTypeResource } from './resources/event-types.js';
 import { listSharedServicesResources, readSharedServicesResource, isSharedServicesResource } from './resources/shared-services.js';
 import { listOAuthResources, readOAuthResource, isOAuthResource } from './resources/oauth.js';
+import { listErrorResources, readErrorResource, isErrorResource } from './resources/errors.js';
+import { listRateLimitResources, readRateLimitResource, isRateLimitResource } from './resources/rate-limits.js';
+import { listSDKResources, readSDKResource, isSDKResource } from './resources/sdk.js';
 
 export class LoyalteezMCPServer {
   private server: Server;
@@ -179,6 +182,9 @@ export class LoyalteezMCPServer {
       resources.push(...listEventTypeResources());
       resources.push(...listSharedServicesResources());
       resources.push(...listOAuthResources());
+      resources.push(...listErrorResources());
+      resources.push(...listRateLimitResources());
+      resources.push(...listSDKResources());
       return { resources };
     });
 
@@ -204,6 +210,15 @@ export class LoyalteezMCPServer {
         }
         if (isOAuthResource(uri)) {
           return readOAuthResource(uri);
+        }
+        if (isErrorResource(uri)) {
+          return readErrorResource(uri);
+        }
+        if (isRateLimitResource(uri)) {
+          return readRateLimitResource(uri);
+        }
+        if (isSDKResource(uri)) {
+          return readSDKResource(uri);
         }
 
         throw new Error(`Resource "${uri}" not found`);
