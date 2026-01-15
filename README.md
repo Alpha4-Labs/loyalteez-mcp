@@ -23,6 +23,10 @@ The Loyalteez MCP Server provides AI tools (Claude, ChatGPT, Cursor, etc.) with 
 - **Documentation Access**: Full developer docs available as MCP resources
 - **Platform Support**: Discord, Telegram, Web, Shopify, Gaming, and more
 
+## Scope
+
+The MCP server focuses on **3rd-party developer integration** capabilities. For brand admin features (Stripe checkout, DNS verification, analytics), use the [Partner Portal](https://partners.loyalteez.app). See [SCOPE.md](./SCOPE.md) for detailed scope definition.
+
 ## Installation
 
 ### Option 1: Install from npm (Recommended)

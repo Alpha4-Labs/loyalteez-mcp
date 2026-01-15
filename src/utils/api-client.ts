@@ -21,6 +21,24 @@ const API_BASE_URLS: NetworkConfig = {
 export type Network = 'mainnet' | 'testnet';
 
 /**
+ * API Versioning
+ * Default API version for all requests
+ */
+export const API_VERSION = 'v1';
+
+/**
+ * API Version Compatibility Matrix
+ * Tracks which MCP server versions are compatible with which API versions
+ */
+export const API_VERSION_COMPATIBILITY = {
+  '1.0.0': {
+    minApiVersion: 'v1',
+    maxApiVersion: 'v1',
+    deprecated: false,
+  },
+} as const;
+
+/**
  * Endpoint status tracking
  * See ENDPOINT-STATUS.md for detailed status information
  */
@@ -80,6 +98,7 @@ export class LoyalteezAPIClient {
         ...options,
         headers: {
           'Content-Type': 'application/json',
+          'X-API-Version': API_VERSION,
           ...options.headers,
         },
       });

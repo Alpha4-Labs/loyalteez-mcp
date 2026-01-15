@@ -4,7 +4,7 @@
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import { LoyalteezAPIClient } from '../utils/api-client.js';
+import { LoyalteezAPIClient, API_VERSION, API_VERSION_COMPATIBILITY } from '../utils/api-client.js';
 
 /**
  * Register diagnostic tools
@@ -45,6 +45,12 @@ export async function handleHealthCheck(
   try {
     const result = await apiClient.healthCheck();
 
+    // Check API version compatibility
+    const versionInfo = {
+      clientVersion: API_VERSION,
+      compatibility: API_VERSION_COMPATIBILITY,
+    };
+
     return {
       content: [
         {
@@ -58,6 +64,7 @@ export async function handleHealthCheck(
               message: result.status === 'healthy' 
                 ? 'All services are operational' 
                 : 'Some services may be experiencing issues',
+              apiVersion: versionInfo,
             },
             null,
             2

@@ -1,43 +1,104 @@
 /**
  * MCP Resources provider for Loyalteez documentation
+ * Implements lazy loading and caching for performance
  */
 
 import type { Resource } from '@modelcontextprotocol/sdk/types.js';
 import { loadDocumentation, getDocByURI, type DocIndex } from '../utils/doc-loader.js';
 import { getDocStructure } from '../utils/doc-index.js';
 
-let docIndex: DocIndex | null = null;
+/**
+ * Resource cache for loaded documentation
+ */
+class ResourceCache {
+  private docIndex: DocIndex | null = null;
+  private structure: Resource[] | null = null;
+  private loadTime: number | null = null;
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+  /**
+   * Get documentation index (lazy load)
+   */
+  getDocIndex(docsPath?: string): DocIndex {
+    // Check if cache is valid
+    if (this.docIndex && this.loadTime && Date.now() - this.loadTime < this.CACHE_TTL) {
+      return this.docIndex;
+    }
+
+    // Load documentation
+    this.docIndex = loadDocumentation(docsPath);
+    this.loadTime = Date.now();
+    this.structure = null; // Invalidate structure cache
+
+    return this.docIndex;
+  }
+
+  /**
+   * Get documentation structure (cached)
+   */
+  getStructure(docsPath?: string): Resource[] {
+    if (this.structure && this.loadTime && Date.now() - this.loadTime < this.CACHE_TTL) {
+      return this.structure;
+    }
+
+    const index = this.getDocIndex(docsPath);
+    this.structure = getDocStructure(index).map((doc) => ({
+      uri: doc.uri,
+      name: doc.name,
+      description: doc.description,
+      mimeType: doc.mimeType,
+    }));
+
+    return this.structure;
+  }
+
+  /**
+   * Clear cache (force reload on next access)
+   */
+  clearCache(): void {
+    this.docIndex = null;
+    this.structure = null;
+    this.loadTime = null;
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats(): {
+    cached: boolean;
+    age: number | null;
+    docCount: number;
+  } {
+    return {
+      cached: this.docIndex !== null,
+      age: this.loadTime ? Date.now() - this.loadTime : null,
+      docCount: this.docIndex ? Object.keys(this.docIndex).length : 0,
+    };
+  }
+}
+
+const cache = new ResourceCache();
 
 /**
- * Initialize documentation index (call at server startup)
+ * Initialize documentation index (optional - lazy loading is default)
+ * @deprecated Use getDocIndex() directly - it will lazy load
  */
 export function initializeDocs(docsPath?: string): void {
-  docIndex = loadDocumentation(docsPath);
+  cache.getDocIndex(docsPath);
 }
 
 /**
- * Get documentation index
+ * Get documentation index (lazy loaded and cached)
  */
-export function getDocIndex(): DocIndex {
-  if (!docIndex) {
-    docIndex = loadDocumentation();
-  }
-  return docIndex;
+export function getDocIndex(docsPath?: string): DocIndex {
+  return cache.getDocIndex(docsPath);
 }
 
 /**
- * List all documentation resources
+ * List all documentation resources (lazy loaded and cached)
  */
-export function listDocResources(): Resource[] {
-  const index = getDocIndex();
-  const structure = getDocStructure(index);
-
-  return structure.map((doc) => ({
-    uri: doc.uri,
-    name: doc.name,
-    description: doc.description,
-    mimeType: doc.mimeType,
-  }));
+export function listDocResources(docsPath?: string): Resource[] {
+  return cache.getStructure(docsPath);
 }
 
 /**
