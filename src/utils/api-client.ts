@@ -20,6 +20,40 @@ const API_BASE_URLS: NetworkConfig = {
 
 export type Network = 'mainnet' | 'testnet';
 
+/**
+ * Endpoint status tracking
+ * See ENDPOINT-STATUS.md for detailed status information
+ */
+export const ENDPOINT_STATUS = {
+  verified: [
+    '/loyalteez-api/manual-event',
+    '/loyalteez-api/bulk-events',
+    '/loyalteez-api/health',
+    '/loyalteez-api/debug',
+    '/loyalteez-api/event-config',
+    '/loyalteez-api/stripe-mint',
+    '/streak/record-activity',
+    '/streak/claim-milestone',
+    '/streak/status',
+    '/leaderboard',
+    '/leaderboard/update-stats',
+    '/loyalteez-api/pregenerate-user',
+    '/relay',
+    '/perks',
+    '/perks/redeem',
+    '/perks/check-eligibility',
+    '/achievements',
+    '/achievements/update-progress',
+    '/drops/create',
+    '/drops/claim',
+  ],
+  needsVerification: [
+    '/loyalteez-api/user-balance',
+    '/loyalteez-api/check-eligibility',
+    '/user-stats',
+  ],
+} as const;
+
 export class LoyalteezAPIClient {
   private network: Network;
 

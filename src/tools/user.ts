@@ -10,6 +10,27 @@ import { getBrandId } from '../utils/brand-id.js';
 import { z } from 'zod';
 
 /**
+ * FUTURE: Batch User Stats Tool
+ * 
+ * This tool would allow querying stats for multiple users at once.
+ * Currently not implemented as single-user queries cover most use cases.
+ * 
+ * If demand arises, implement as:
+ * - loyalteez_batch_get_user_stats
+ * - Accepts array of { userIdentifier, platform }
+ * - Returns array of user stats objects
+ * 
+ * Example:
+ * {
+ *   "brandId": "0x...",
+ *   "users": [
+ *     { "userIdentifier": "discord_123@loyalteez.app", "platform": "discord" },
+ *     { "userIdentifier": "telegram_456@loyalteez.app", "platform": "telegram" }
+ *   ]
+ * }
+ */
+
+/**
  * Register user tools
  */
 export function registerUserTools(apiClient: LoyalteezAPIClient): Tool[] {
@@ -23,6 +44,8 @@ function getUserBalanceTool(_apiClient: LoyalteezAPIClient): Tool {
   return {
     name: 'loyalteez_get_user_balance',
     description: `Get a user's current LTZ balance and recent transaction history. Use this to display balance in your app or verify rewards were distributed.
+
+⚠️ **Note**: This endpoint may require backend verification. If the endpoint is unavailable, the tool will return an error with guidance.
 
 See also: loyalteez://docs/api/rest-api`,
     inputSchema: {
@@ -59,6 +82,8 @@ function checkEligibilityTool(_apiClient: LoyalteezAPIClient): Tool {
     name: 'loyalteez_check_eligibility',
     description: `Check if a user is eligible to receive a reward for a specific event. Returns eligibility status, cooldown info, and claim history. Use this BEFORE tracking an event to validate the user can receive the reward.
 
+⚠️ **Note**: This endpoint may require backend verification. The implementation may need to aggregate data from event configuration and user history.
+
 See also: loyalteez://docs/api/rest-api`,
     inputSchema: {
       type: 'object',
@@ -89,6 +114,8 @@ function getUserStatsTool(_apiClient: LoyalteezAPIClient): Tool {
   return {
     name: 'loyalteez_get_user_stats',
     description: `Get comprehensive stats for a single user including balance, lifetime earnings, streak, activity, and rank.
+
+⚠️ **Note**: This endpoint aggregates data from multiple services (streaks, leaderboards, achievements). The implementation may need adjustment based on actual backend structure.
 
 See also: loyalteez://docs/shared-services/leaderboard-service`,
     inputSchema: {
@@ -147,11 +174,21 @@ export async function handleGetUserBalance(
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const is404 = errorMessage.includes('404') || errorMessage.includes('Not Found');
+    const isEndpointError = errorMessage.includes('endpoint') || is404;
+    
     return {
       content: [
         {
           type: 'text',
-          text: `Error getting user balance: ${errorMessage}`,
+          text: JSON.stringify({
+            error: 'Error getting user balance',
+            message: errorMessage,
+            ...(isEndpointError && {
+              note: 'This endpoint may need backend verification. See ENDPOINT-STATUS.md for details.',
+              suggestion: 'The endpoint may require blockchain query or aggregation from multiple services.',
+            }),
+          }, null, 2),
         },
       ],
       isError: true,
@@ -192,11 +229,21 @@ export async function handleCheckEligibility(
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const is404 = errorMessage.includes('404') || errorMessage.includes('Not Found');
+    const isEndpointError = errorMessage.includes('endpoint') || is404;
+    
     return {
       content: [
         {
           type: 'text',
-          text: `Error checking eligibility: ${errorMessage}`,
+          text: JSON.stringify({
+            error: 'Error checking eligibility',
+            message: errorMessage,
+            ...(isEndpointError && {
+              note: 'This endpoint may need backend verification. See ENDPOINT-STATUS.md for details.',
+              suggestion: 'The endpoint may need to aggregate data from event configuration and user history.',
+            }),
+          }, null, 2),
         },
       ],
       isError: true,
@@ -236,11 +283,21 @@ export async function handleGetUserStats(
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const is404 = errorMessage.includes('404') || errorMessage.includes('Not Found');
+    const isEndpointError = errorMessage.includes('endpoint') || is404;
+    
     return {
       content: [
         {
           type: 'text',
-          text: `Error getting user stats: ${errorMessage}`,
+          text: JSON.stringify({
+            error: 'Error getting user stats',
+            message: errorMessage,
+            ...(isEndpointError && {
+              note: 'This endpoint aggregates data from multiple services. See ENDPOINT-STATUS.md for details.',
+              suggestion: 'The endpoint may need to be implemented as a composite endpoint or multiple service calls.',
+            }),
+          }, null, 2),
         },
       ],
       isError: true,

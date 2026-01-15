@@ -156,6 +156,59 @@ const wallet = await LoyalteezAutomation.getUserWallet('user@example.com');
 console.log('Wallet:', wallet.walletAddress);
 console.log('Balance:', wallet.ltzBalance, 'LTZ');`,
     },
+    startAutoDetection: {
+      signature: 'LoyalteezAutomation.startAutoDetection()',
+      description: 'Enable automatic form submission detection. This is called automatically if autoDetect: true is passed to init().',
+      returns: { type: 'void' },
+      example: `
+// If you didn't enable auto-detect during init:
+LoyalteezAutomation.startAutoDetection();
+
+// What it detects:
+// - HTML form submissions
+// - AJAX requests (fetch API)
+// - XMLHttpRequest submissions
+// - Newsletter signups
+// - Contact forms`,
+      notes: 'Auto-detection ignores Loyalteez API calls (prevents infinite loops), forms without email fields, and requests to same-origin APIs.',
+    },
+    stopAutoDetection: {
+      signature: 'LoyalteezAutomation.stopAutoDetection()',
+      description: 'Disable automatic form submission detection',
+      returns: { type: 'void' },
+      example: `
+// Stop auto-detection
+LoyalteezAutomation.stopAutoDetection();
+
+// You can restart it later
+LoyalteezAutomation.startAutoDetection();`,
+    },
+  },
+  clientSideMethods: {
+    note: 'The following methods are client-side only and do not require server-side API calls. They are not available as MCP tools because they manage browser state, not backend operations.',
+    whyNotMCPTools: 'These methods operate in the browser environment and manage local SDK state. The MCP server focuses on backend integration APIs that can be called from any environment.',
+    methods: [
+      {
+        name: 'identify()',
+        reason: 'Associates SDK session with user - browser-only state management',
+      },
+      {
+        name: 'reset()',
+        reason: 'Clears user session - browser-only state management',
+      },
+      {
+        name: 'getUserWallet()',
+        reason: 'Fetches wallet from API but is a convenience method for browser SDK',
+      },
+      {
+        name: 'startAutoDetection()',
+        reason: 'Manages browser event listeners - browser-only functionality',
+      },
+      {
+        name: 'stopAutoDetection()',
+        reason: 'Manages browser event listeners - browser-only functionality',
+      },
+    ],
   },
   frameworkExamples: {
     react: `
@@ -248,6 +301,55 @@ function MyApp({ Component, pageProps }) {
       },
     ],
   },
+  troubleshooting: {
+    sdkNotLoading: {
+      issue: 'SDK not loading',
+      solutions: [
+        'Check script tag is present and correct',
+        'Verify network connectivity',
+        'Check browser console for errors',
+        'Ensure brand ID is correct',
+      ],
+    },
+    eventsNotTracking: {
+      issue: 'Events not being tracked',
+      solutions: [
+        'Check browser console for errors',
+        'Verify brand ID is set correctly',
+        'Check Partner Portal → Analytics for received events',
+        'Ensure event types are configured in Partner Portal',
+        'Verify domain is authorized in Partner Portal',
+      ],
+    },
+    corsErrors: {
+      issue: 'CORS errors',
+      solutions: [
+        'Verify domain is authorized in Partner Portal',
+        'Ensure using HTTPS (not HTTP)',
+        'Check API endpoint URL is correct',
+      ],
+    },
+    browserVsMobile: {
+      description: 'The JavaScript SDK is browser-only. For mobile apps, use direct API calls.',
+      mobileApproach: 'Mobile apps should use HTTP POST requests to /loyalteez-api/manual-event instead of the SDK.',
+      example: `
+// Mobile (React Native, iOS, Android)
+fetch('https://api.loyalteez.app/loyalteez-api/manual-event', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    brandId: 'your-brand-id',
+    eventType: 'account_creation',
+    userEmail: 'user@example.com'
+  })
+});
+
+// Web (Browser)
+LoyalteezAutomation.track('account_creation', {
+  userEmail: 'user@example.com'
+});`,
+    },
+  },
 };
 
 /**
@@ -298,6 +400,8 @@ export function readSDKResource(uri: string): {
               installation: SDK_REFERENCE.installation,
               methods: SDK_REFERENCE.methods,
               autoDetection: SDK_REFERENCE.autoDetection,
+              clientSideMethods: SDK_REFERENCE.clientSideMethods,
+              troubleshooting: SDK_REFERENCE.troubleshooting,
             },
             null,
             2
