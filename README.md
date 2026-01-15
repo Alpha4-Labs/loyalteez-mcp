@@ -2,9 +2,11 @@
 
 Model Context Protocol (MCP) server for Loyalteez - enabling AI assistants to design loyalty programs, create events, track rewards, and access comprehensive documentation.
 
+[![npm version](https://img.shields.io/npm/v/@loyalteez/mcp-server)](https://www.npmjs.com/package/@loyalteez/mcp-server)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](./tests)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue)](https://www.typescriptlang.org/)
 [![MCP](https://img.shields.io/badge/MCP-1.0-purple)](https://modelcontextprotocol.io)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ## Overview
 
@@ -23,8 +25,22 @@ The Loyalteez MCP Server provides AI tools (Claude, ChatGPT, Cursor, etc.) with 
 
 ## Installation
 
+### Option 1: Install from npm (Recommended)
+
 ```bash
-# Clone or navigate to the repository
+npm install -g @loyalteez/mcp-server
+```
+
+Or install locally:
+```bash
+npm install @loyalteez/mcp-server
+```
+
+### Option 2: Install from GitHub
+
+```bash
+# Clone the repository
+git clone https://github.com/Alpha4-Labs/loyalteez-mcp.git
 cd loyalteez-mcp
 
 # Install dependencies
@@ -46,6 +62,23 @@ Add to your Claude Desktop MCP configuration:
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 - **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
+**If installed via npm:**
+```json
+{
+  "mcpServers": {
+    "loyalteez": {
+      "command": "npx",
+      "args": ["@loyalteez/mcp-server"],
+      "env": {
+        "LOYALTEEZ_NETWORK": "mainnet",
+        "LOYALTEEZ_BRAND_ID": "0x47511fc1c6664c9598974cb112965f8b198e0c725e"
+      }
+    }
+  }
+}
+```
+
+**If installed from GitHub:**
 ```json
 {
   "mcpServers": {

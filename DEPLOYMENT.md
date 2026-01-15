@@ -77,9 +77,10 @@ npm install @loyalteez/mcp-server
 
 ## Recommended Approach
 
-**For now**: Make the repo public (Option 1)
+✅ **Repository is public**: https://github.com/Alpha4-Labs/loyalteez-mcp
+✅ **Published to npm**: [@loyalteez/mcp-server](https://www.npmjs.com/package/@loyalteez/mcp-server)
 
-**Later**: Publish to npm (Option 2) for easier distribution
+Users can now install via npm for easier setup!
 
 ## Making the Repository Public
 
