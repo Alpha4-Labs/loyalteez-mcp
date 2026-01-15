@@ -30,12 +30,15 @@ This document tracks the status of API endpoints used by the Loyalteez MCP serve
 
 | Endpoint | Method | Status | Notes |
 |----------|--------|--------|-------|
-| `/loyalteez-api/user-balance` | POST | ⚠️ Needs Verification | May require new endpoint or blockchain query |
-| `/loyalteez-api/check-eligibility` | POST | ⚠️ Needs Verification | May need to aggregate from event config + user history |
+| `/loyalteez-api/user-balance` | POST | ⚠️ Needs Verification | Falls back to blockchain query guidance if unavailable |
+| `/loyalteez-api/check-eligibility` | POST | ⚠️ Needs Verification | Falls back to composite check using event config if unavailable |
 
 **Implementation Notes:**
-- `getUserBalance`: Currently attempts POST to `/loyalteez-api/user-balance`. May need to query blockchain directly or use a different endpoint.
-- `checkEligibility`: Currently attempts POST to `/loyalteez-api/check-eligibility`. May need to aggregate data from event configuration and user claim history.
+- `getUserBalance`: Attempts POST to `/loyalteez-api/user-balance`. If unavailable, provides guidance to query LTZ token contract (`0x5242b6DB88A72752ac5a54cFe6A7DB8244d743c9`) directly using `balanceOf(address)` on Soneium Mainnet (Chain ID: 1868). See `loyalteez://contracts/ltz-token` for contract details.
+- `checkEligibility`: Attempts POST to `/loyalteez-api/check-eligibility`. If unavailable, falls back to composite approach:
+  1. Calls `getEventConfig` to get event settings (maxClaims, cooldownHours, defaultReward)
+  2. Returns partial eligibility info (full check requires claim history which backend tracks)
+  3. Provides guidance for manual eligibility determination
 
 ### Stripe Integration
 
@@ -64,10 +67,15 @@ This document tracks the status of API endpoints used by the Loyalteez MCP serve
 
 | Endpoint | Method | Status | Notes |
 |----------|--------|--------|-------|
-| `/user-stats/:brandId/:userIdentifier` | GET | ⚠️ Needs Verification | Aggregates from multiple services - may need adjustment |
+| `/user-stats/:brandId/:userIdentifier` | GET | ⚠️ Needs Verification | Falls back to composite aggregation from individual services if unavailable |
 
 **Implementation Notes:**
-- `getUserStats`: Currently attempts GET to `/user-stats/:brandId/:userIdentifier`. This aggregates data from streaks, leaderboards, and achievements. May need to be implemented as a composite endpoint or multiple calls.
+- `getUserStats`: Attempts GET to `/user-stats/:brandId/:userIdentifier`. If unavailable, falls back to composite aggregation:
+  1. Calls `getStreakStatus` for streak data (current, longest)
+  2. Calls `getLeaderboard` to find user rank and lifetime earnings
+  3. Provides partial stats and guidance for complete stats via individual service calls
+  4. Balance requires separate `getUserBalance` call (or blockchain query)
+  5. Activity stats (messages, voice, reactions) may require platform-specific APIs
 
 ## Pregeneration Service
 

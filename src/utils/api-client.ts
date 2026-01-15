@@ -316,8 +316,17 @@ export class LoyalteezAPIClient {
 
   /**
    * Get user balance
-   * Note: This endpoint may need to query blockchain directly or aggregate from multiple services
-   * Current implementation attempts API call - may need adjustment based on actual backend
+   * 
+   * Implementation Note: LTZ balance is stored on-chain. To query a user's balance:
+   * 1. Resolve user's wallet address via resolveUser or getUserWallet
+   * 2. Query the LTZ token contract (0x5242b6DB88A72752ac5a54cFe6A7DB8244d743c9) using balanceOf(address)
+   * 
+   * This endpoint attempts an API call, but if unavailable, use blockchain query:
+   * - Contract: LTZ Token (ERC-20) at 0x5242b6DB88A72752ac5a54cFe6A7DB8244d743c9
+   * - Network: Soneium Mainnet (Chain ID: 1868)
+   * - Method: balanceOf(address userWallet)
+   * 
+   * Transaction history may be available via event tracking API or blockchain explorer.
    */
   async getUserBalance(params: {
     brandId: string;
@@ -334,18 +343,38 @@ export class LoyalteezAPIClient {
       timestamp: string;
     }>;
   }> {
-    // Attempt to call API endpoint - may need to be implemented via blockchain query or shared services
-    const url = `${this.getBaseUrl('eventHandler')}/loyalteez-api/user-balance`;
-    return this.request(url, {
-      method: 'POST',
-      body: JSON.stringify(params),
-    });
+    // Attempt API endpoint first - if unavailable, return guidance for blockchain query
+    try {
+      const url = `${this.getBaseUrl('eventHandler')}/loyalteez-api/user-balance`;
+      return await this.request(url, {
+        method: 'POST',
+        body: JSON.stringify(params),
+      });
+    } catch (error) {
+      // If endpoint unavailable, throw with guidance
+      throw new Error(
+        `User balance endpoint unavailable. To query balance: ` +
+        `1. Get user's wallet address via loyalteez_resolve_user or SDK getUserWallet() ` +
+        `2. Query LTZ contract (0x5242b6DB88A72752ac5a54cFe6A7DB8244d743c9) balanceOf() method on Soneium Mainnet (Chain ID: 1868). ` +
+        `See loyalteez://contracts/ltz-token for contract details.`
+      );
+    }
   }
 
   /**
    * Check eligibility for an event
-   * Note: This endpoint may need to query event config and user history
-   * Current implementation attempts API call - may need adjustment based on actual backend
+   * 
+   * Implementation Note: Eligibility checking requires:
+   * 1. Event configuration (from getEventConfig) to check maxClaims, cooldown, reward amount
+   * 2. User claim history to verify if user has exceeded maxClaims or is in cooldown period
+   * 
+   * This endpoint attempts a direct API call. If unavailable, eligibility can be determined by:
+   * - Calling getEventConfig to get event configuration (maxClaims, cooldownHours, defaultReward)
+   * - Checking user's claim history (may require tracking in your own system or via event tracking logs)
+   * - Comparing claim count to maxClaims
+   * - Checking if cooldown period has elapsed since last claim
+   * 
+   * The backend tracks claim history internally, so this endpoint should ideally be available.
    */
   async checkEligibility(params: {
     brandId: string;
@@ -359,18 +388,52 @@ export class LoyalteezAPIClient {
     maxClaims: number;
     rewardAmount: number;
   }> {
-    // Attempt to call API endpoint - may need to aggregate from event config + user history
-    const url = `${this.getBaseUrl('eventHandler')}/loyalteez-api/check-eligibility`;
-    return this.request(url, {
-      method: 'POST',
-      body: JSON.stringify(params),
-    });
+    try {
+      // Attempt direct API endpoint
+      const url = `${this.getBaseUrl('eventHandler')}/loyalteez-api/check-eligibility`;
+      return await this.request(url, {
+        method: 'POST',
+        body: JSON.stringify(params),
+      });
+    } catch (error) {
+      // If endpoint unavailable, try composite approach: getEventConfig + manual check
+      // This is a fallback - the endpoint should be preferred when available
+      const eventConfig = await this.getEventConfig({ brandId: params.brandId });
+      const event = eventConfig.events?.find((e: { eventType: string }) => e.eventType === params.eventType);
+      
+      if (!event) {
+        throw new Error(
+          `Event type "${params.eventType}" not configured. ` +
+          `Use loyalteez_get_event_config to see available events, or create the event first.`
+        );
+      }
+
+      // Return partial eligibility check (without claim history)
+      // Note: Full eligibility requires claim history which the backend tracks
+      throw new Error(
+        `Eligibility endpoint unavailable. Event "${params.eventType}" is configured with ` +
+        `maxClaims: ${event.maxClaims || 'unlimited'}, cooldown: ${event.cooldownHours || 0}h, ` +
+        `reward: ${event.rewardAmount || 0} LTZ. ` +
+        `For full eligibility check, use the backend endpoint or track claim history in your system.`
+      );
+    }
   }
 
   /**
    * Get user stats (aggregates from multiple services)
-   * Note: This aggregates data from shared services (streaks, leaderboards, achievements)
-   * Current implementation attempts shared services endpoint - may need adjustment
+   * 
+   * Implementation Note: User stats aggregate data from multiple shared services:
+   * - Streak Service: current streak, longest streak
+   * - Leaderboard Service: lifetime earnings, rank
+   * - Activity Service: messages, voice minutes, reactions (platform-specific)
+   * - Balance: Query from blockchain (see getUserBalance)
+   * 
+   * This endpoint attempts a direct aggregation endpoint. If unavailable, stats can be
+   * aggregated by calling individual services:
+   * - loyalteez_get_streak_status for streak data
+   * - loyalteez_get_leaderboard to find user rank and earnings
+   * - loyalteez_get_user_balance for balance
+   * - Platform-specific activity tracking (messages, voice, reactions may require platform APIs)
    */
   async getUserStats(params: {
     brandId: string;
@@ -397,11 +460,62 @@ export class LoyalteezAPIClient {
       global: number;
     };
   }> {
-    // Attempt to call shared services endpoint - aggregates from multiple services
-    const url = `${this.getBaseUrl('services')}/user-stats/${params.brandId}/${encodeURIComponent(params.userIdentifier)}`;
-    return this.request(url, {
-      method: 'GET',
-    });
+    try {
+      // Attempt direct aggregation endpoint
+      const url = `${this.getBaseUrl('services')}/user-stats/${params.brandId}/${encodeURIComponent(params.userIdentifier)}`;
+      return await this.request(url, {
+        method: 'GET',
+      });
+    } catch (error) {
+      // If endpoint unavailable, attempt composite aggregation from individual services
+      // This is a fallback - the aggregation endpoint should be preferred when available
+      
+      // Get streak status
+      let streakData = { current: 0, longest: 0 };
+      try {
+        const streakStatus = await this.getStreakStatus({
+          brandId: params.brandId,
+          userIdentifier: params.userIdentifier,
+        });
+        streakData = {
+          current: streakStatus.currentStreak || 0,
+          longest: streakStatus.longestStreak || 0,
+        };
+      } catch {
+        // Streak service unavailable - use defaults
+      }
+
+      // Get leaderboard to find user rank and earnings
+      let rankData = { server: -1, global: -1 };
+      let lifetimeEarned = 0;
+      try {
+        const leaderboard = await this.getLeaderboard({
+          brandId: params.brandId,
+          metric: 'ltz_earned',
+          period: 'all_time',
+        });
+        const userIndex = leaderboard.rankings?.findIndex(
+          (entry: { userId: string }) => entry.userId === params.userIdentifier
+        );
+        if (userIndex !== undefined && userIndex >= 0) {
+          rankData.global = userIndex + 1;
+          rankData.server = userIndex + 1; // Assuming single server for now
+          lifetimeEarned = leaderboard.rankings?.[userIndex]?.value || 0;
+        }
+      } catch {
+        // Leaderboard service unavailable - use defaults
+      }
+
+      // Return composite stats (partial - balance and activity require additional calls)
+      throw new Error(
+        `User stats aggregation endpoint unavailable. Partial stats available: ` +
+        `Streak: ${streakData.current} days (longest: ${streakData.longest}), ` +
+        `Rank: ${rankData.global > 0 ? `#${rankData.global}` : 'unranked'}, ` +
+        `Lifetime earned: ${lifetimeEarned} LTZ. ` +
+        `For complete stats, call individual services: loyalteez_get_streak_status, ` +
+        `loyalteez_get_leaderboard, loyalteez_get_user_balance, and platform activity APIs.`
+      );
+    }
   }
 
   /**

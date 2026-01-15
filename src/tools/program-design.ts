@@ -114,7 +114,7 @@ export async function handleDesignProgram(
     const program = generateProgramDesign(brandId, context, docIndex);
 
     // Generate implementation code
-    const implementation = generateImplementationCode(context, program);
+    const implementation = generateImplementationCode(brandId, context, program);
 
     return {
       content: [
@@ -357,6 +357,7 @@ function generateStreakConfig(budget: { monthly_ltz: number; avg_reward: number 
  * Generate implementation code
  */
 function generateImplementationCode(
+  brandId: string,
   context: {
     appType: string;
     platforms: string[];
@@ -366,24 +367,23 @@ function generateImplementationCode(
   const implementation: ImplementationCode = {};
 
   if (context.platforms.includes('discord')) {
-    implementation.discord = generateDiscordBotCode(program);
+    implementation.discord = generateDiscordBotCode(brandId, program);
   }
 
   if (context.platforms.includes('telegram')) {
-    implementation.telegram = generateTelegramBotCode(program);
+    implementation.telegram = generateTelegramBotCode(brandId, program);
   }
 
   if (context.platforms.includes('web') || context.platforms.includes('shopify')) {
-    implementation.web = generateWebSDKCode(program);
+    implementation.web = generateWebSDKCode(brandId, program);
   }
 
-  implementation.webhooks = generateWebhookCode(program);
+  implementation.webhooks = generateWebhookCode(brandId, program);
 
   return implementation;
 }
 
-function generateDiscordBotCode(program: ProgramDesign): string {
-  const brandId = program.brandId || 'YOUR_BRAND_ID';
+function generateDiscordBotCode(brandId: string, program: ProgramDesign): string {
   
   return `// Discord Bot Implementation for ${program.name}
 // TypeScript types and error handling included
@@ -508,8 +508,7 @@ describe('LoyaltyBot', () => {
 \`\`\``;
 }
 
-function generateTelegramBotCode(program: ProgramDesign): string {
-  const brandId = program.brandId || 'YOUR_BRAND_ID';
+function generateTelegramBotCode(brandId: string, program: ProgramDesign): string {
   
   return `// Telegram Bot Implementation for ${program.name}
 // TypeScript types and error handling included
@@ -626,8 +625,7 @@ describe('LoyaltyTelegramBot', () => {
 \`\`\``;
 }
 
-function generateWebSDKCode(program: ProgramDesign): string {
-  const brandId = program.brandId || 'YOUR_BRAND_ID';
+function generateWebSDKCode(brandId: string, program: ProgramDesign): string {
   
   return `// Web SDK Implementation for ${program.name}
 // TypeScript types and error handling included
@@ -750,8 +748,7 @@ describe('LoyaltyTracker', () => {
 \`\`\``;
 }
 
-function generateWebhookCode(program: ProgramDesign): string {
-  const brandId = program.brandId || 'YOUR_BRAND_ID';
+function generateWebhookCode(brandId: string, program: ProgramDesign): string {
   
   return `// Webhook Handler for ${program.name}
 // POST endpoint: /webhooks/loyalteez

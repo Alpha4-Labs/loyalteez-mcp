@@ -40,7 +40,7 @@ See also: loyalteez://docs/api/rest-api`,
  */
 export async function handleHealthCheck(
   apiClient: LoyalteezAPIClient,
-  args: unknown
+  _args: unknown
 ): Promise<CallToolResult> {
   try {
     const result = await apiClient.healthCheck();

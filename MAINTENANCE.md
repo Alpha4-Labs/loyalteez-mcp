@@ -1,149 +1,211 @@
 # Maintenance Guide
 
-This document outlines maintenance procedures, testing checklists, and update protocols for the Loyalteez MCP server.
+This document provides maintenance procedures, checklists, and protocols for the Loyalteez MCP server.
 
 ## Testing Checklist
 
-### Before Committing
+Before committing changes:
 
 - [ ] Run `npm run typecheck` - No TypeScript errors
 - [ ] Run `npm test` - All tests pass
-- [ ] Run `npm run verify-docs` - Documentation is in sync
-- [ ] Build succeeds: `npm run build`
-- [ ] No linter errors
-
-### Before Releasing
-
-- [ ] All tests pass (`npm test`)
-- [ ] Test coverage >90% (`npm run test:coverage`)
-- [ ] Documentation sync verified (`npm run verify-docs`)
-- [ ] README.md updated with new features
-- [ ] CHANGELOG.md updated (if maintained)
-- [ ] Version bumped in `package.json`
-- [ ] Build and test in clean environment
-- [ ] Test with actual MCP client (Claude Desktop, Cursor)
+- [ ] Run `npm run test:coverage` - Coverage meets target (90%+)
+- [ ] Run `npm run verify-docs` - Documentation sync verified
+- [ ] Run `npm run build` - Build succeeds without errors
+- [ ] Test new tools manually (if applicable)
+- [ ] Update tests for new features
+- [ ] Update documentation if needed
 
 ## Update Procedures
 
 ### Adding a New Tool
 
-1. **Create tool file**: `src/tools/{category}.ts`
-2. **Register tool**: Add to `src/server.ts` tool registration
-3. **Add handler**: Add case to switch statement in `src/server.ts`
-4. **Add tests**: Create test file in `tests/`
-5. **Update README**: Add tool to tool list
-6. **Update docs**: Update `public-docs/developer-docs/docs/integrations/mcp.md`
+1. **Create tool file** in `src/tools/`
+2. **Register tool** in `src/server.ts`
+3. **Add handler** in `src/server.ts` switch statement
+4. **Add tests** in `tests/`
+5. **Update README.md** with new tool
+6. **Update tool count** in documentation
+7. **Verify scope** - Check `SCOPE.md` to ensure tool fits scope
+8. **Add to API client** if new endpoint needed
 
 ### Adding a New Resource
 
-1. **Create resource file**: `src/resources/{name}.ts`
-2. **Register resource**: Add to `src/server.ts` resource registration
-3. **Add handler**: Add case to switch statement in `src/server.ts`
-4. **Add tests**: Test resource loading
-5. **Update README**: Add resource to resource list
+1. **Create resource file** in `src/resources/`
+2. **Register resource** in `src/server.ts`
+3. **Add handler** in `src/server.ts` ReadResourceRequestSchema handler
+4. **Add tests** in `tests/`
+5. **Update README.md** with new resource
+6. **Update resource count** in documentation
 
 ### Updating API Client
 
-1. **Add method**: Add to `src/utils/api-client.ts`
-2. **Update ENDPOINT-STATUS.md**: Document endpoint status
-3. **Add tests**: Test API client method
-4. **Update version**: If breaking change, update `API_VERSION`
+1. **Update endpoint** in `src/utils/api-client.ts`
+2. **Update ENDPOINT-STATUS.md** if endpoint status changes
+3. **Update tool handlers** if response format changes
+4. **Update tests** to match new API
+5. **Test with actual API** if possible
+
+### Updating Documentation
+
+1. **Update source docs** in `public-docs/developer-docs/docs/`
+2. **Run `npm run verify-docs`** to verify sync
+3. **Update resource content** if needed
+4. **Test resource loading** manually
 
 ## Breaking Change Protocol
 
-### When Making Breaking Changes
+### What Constitutes a Breaking Change
 
-1. **Increment API Version**: Update `API_VERSION` in `api-client.ts`
-2. **Update Compatibility Matrix**: Add entry to `API_VERSION_COMPATIBILITY`
-3. **Update API-VERSIONING.md**: Document the change
-4. **Create Migration Guide**: Document how to migrate
-5. **Deprecation Notice**: Add deprecation warnings if applicable
-6. **Update Tests**: Ensure all tests pass with new version
+- Removing a tool
+- Changing tool input/output schema
+- Removing a resource
+- Changing resource URI format
+- Changing API client method signatures
+- Removing API client methods
 
-### Version Bumping
+### Process for Breaking Changes
 
-- **Major version** (1.0.0 → 2.0.0): Breaking changes
-- **Minor version** (1.0.0 → 1.1.0): New features, backward compatible
-- **Patch version** (1.0.0 → 1.0.1): Bug fixes, backward compatible
+1. **Create issue** documenting the breaking change
+2. **Deprecate first** - Mark as deprecated in current version
+3. **Add migration guide** - Document how to migrate
+4. **Update version** - Bump major version
+5. **Update CHANGELOG.md** - Document breaking changes
+6. **Announce** - Notify users of breaking changes
+7. **Remove deprecated** - In next major version
+
+### Versioning Strategy
+
+- **Major** (1.0.0 → 2.0.0): Breaking changes
+- **Minor** (1.0.0 → 1.1.0): New features, backwards compatible
+- **Patch** (1.0.0 → 1.0.1): Bug fixes, backwards compatible
 
 ## Dependency Updates
 
 ### Automated Updates
 
-- Dependabot is configured to create PRs for dependency updates
-- Review and test all dependency updates before merging
+- Dependabot is configured for automated dependency updates
+- Review and merge PRs for patch/minor updates
+- Test major updates thoroughly before merging
 
 ### Manual Updates
 
-1. **Check changelogs**: Review breaking changes in dependencies
-2. **Update package.json**: Update version numbers
-3. **Run tests**: Ensure everything still works
-4. **Update lockfile**: Run `npm install` to update `package-lock.json`
+1. **Check for updates**: `npm outdated`
+2. **Update package.json**: Change version numbers
+3. **Run `npm install`**: Install new versions
+4. **Run tests**: Ensure nothing breaks
+5. **Check changelogs**: Review dependency changelogs
+6. **Update if needed**: Adjust code for breaking changes
 
-## Performance Monitoring
+### Security Updates
 
-### Cache Statistics
-
-Monitor documentation cache performance:
-
-```typescript
-import { getDocCacheStats } from './src/resources/docs.js';
-
-const stats = getDocCacheStats();
-console.log('Cache stats:', stats);
-```
-
-### Resource Loading
-
-- Documentation resources are lazy-loaded (loaded on first access)
-- Cache TTL: 5 minutes
-- Monitor cache hit rates and load times
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Documentation not loading**
-   - Check `public-docs/developer-docs/docs` path
-   - Run `npm run verify-docs` to check sync
-   - Verify file permissions
-
-2. **Tests failing**
-   - Run `npm run typecheck` first
-   - Check for TypeScript errors
-   - Verify test environment setup
-
-3. **Build errors**
-   - Clear `dist/` directory
-   - Run `npm run build` again
-   - Check `tsconfig.json` configuration
+- **Priority**: High - Update immediately
+- **Process**: 
+  1. Review security advisory
+  2. Update dependency
+  3. Run full test suite
+  4. Deploy if tests pass
 
 ## Code Review Checklist
 
 When reviewing PRs:
 
-- [ ] All tests pass
-- [ ] Code follows existing patterns
-- [ ] TypeScript types are correct
-- [ ] Error handling is appropriate
+- [ ] Code follows TypeScript best practices
+- [ ] Tests are included for new features
+- [ ] Tests pass
 - [ ] Documentation is updated
-- [ ] No breaking changes (or properly versioned)
-- [ ] Scope is appropriate (see SCOPE.md)
-- [ ] Performance considerations addressed
+- [ ] Scope is respected (see `SCOPE.md`)
+- [ ] Error handling is appropriate
+- [ ] No hardcoded values (use environment variables)
+- [ ] API client methods have proper error handling
+- [ ] Tool descriptions are clear and helpful
+- [ ] Resource content is accurate
+
+## Performance Monitoring
+
+### Metrics to Track
+
+- Server startup time
+- Resource load time
+- Cache hit rate
+- API response times
+- Memory usage
+
+### Optimization Opportunities
+
+- Lazy loading (already implemented)
+- Caching (already implemented)
+- Resource preloading (if needed)
+- API request batching (if applicable)
+
+## Troubleshooting
+
+### Common Issues
+
+#### Build Fails
+
+- Check TypeScript errors: `npm run typecheck`
+- Verify all imports are correct
+- Check for missing dependencies
+
+#### Tests Fail
+
+- Run tests individually: `npm test -- <test-file>`
+- Check test environment setup
+- Verify mock data is correct
+
+#### Documentation Sync Fails
+
+- Run `npm run verify-docs` to see specific issues
+- Check if source docs exist
+- Verify URI mappings are correct
+
+#### API Client Errors
+
+- Check `ENDPOINT-STATUS.md` for endpoint status
+- Verify network configuration
+- Test endpoint manually with curl/Postman
+
+### Getting Help
+
+- Check existing issues on GitHub
+- Review documentation
+- Check `SCOPE.md` for scope questions
+- Review `MCP-SWOT-ANALYSIS.md` for context
 
 ## Release Process
 
-1. **Update version**: Bump version in `package.json`
-2. **Update CHANGELOG**: Document changes
+1. **Update version** in `package.json`
+2. **Update CHANGELOG.md** with changes
 3. **Run full test suite**: `npm test`
 4. **Build**: `npm run build`
-5. **Tag release**: `git tag v{version}`
-6. **Publish**: `npm publish`
-7. **Create GitHub release**: With release notes
+5. **Verify docs**: `npm run verify-docs`
+6. **Create git tag**: `git tag v1.0.0`
+7. **Push tag**: `git push --tags`
+8. **Publish to npm**: `npm publish`
+9. **Create GitHub release** with changelog
 
-## Related Documentation
+## Regular Maintenance Tasks
 
-- [SCOPE.md](./SCOPE.md) - Scope definition
-- [API-VERSIONING.md](./API-VERSIONING.md) - Versioning strategy
-- [ENDPOINT-STATUS.md](./ENDPOINT-STATUS.md) - Endpoint status
-- [README.md](./README.md) - Overview and usage
+### Weekly
+
+- Review and merge Dependabot PRs
+- Check for security advisories
+- Review open issues
+
+### Monthly
+
+- Review test coverage
+- Update dependencies if needed
+- Review and update documentation
+- Check endpoint status
+
+### Quarterly
+
+- Review SWOT analysis
+- Update metrics dashboard
+- Review scope definition
+- Performance optimization review
+
+## Last Updated
+
+2026-01-XX - Initial maintenance guide created

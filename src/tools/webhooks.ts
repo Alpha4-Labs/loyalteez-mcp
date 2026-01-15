@@ -5,7 +5,6 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { LoyalteezAPIClient } from '../utils/api-client.js';
-import { getBrandId } from '../utils/brand-id.js';
 import { z } from 'zod';
 import crypto from 'crypto';
 

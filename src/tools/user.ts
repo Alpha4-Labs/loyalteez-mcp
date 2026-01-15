@@ -45,9 +45,11 @@ function getUserBalanceTool(_apiClient: LoyalteezAPIClient): Tool {
     name: 'loyalteez_get_user_balance',
     description: `Get a user's current LTZ balance and recent transaction history. Use this to display balance in your app or verify rewards were distributed.
 
-⚠️ **Note**: This endpoint may require backend verification. If the endpoint is unavailable, the tool will return an error with guidance.
+**Implementation Note**: LTZ balances are stored on-chain. If the API endpoint is unavailable:
+1. Get the user's wallet address via \`loyalteez_resolve_user\` or SDK \`getUserWallet()\`
+2. Query the LTZ token contract (\`0x5242b6DB88A72752ac5a54cFe6A7DB8244d743c9\`) using \`balanceOf(address)\` on Soneium Mainnet (Chain ID: 1868)
 
-See also: loyalteez://docs/api/rest-api`,
+See also: loyalteez://docs/api/rest-api, loyalteez://contracts/ltz-token`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -82,7 +84,10 @@ function checkEligibilityTool(_apiClient: LoyalteezAPIClient): Tool {
     name: 'loyalteez_check_eligibility',
     description: `Check if a user is eligible to receive a reward for a specific event. Returns eligibility status, cooldown info, and claim history. Use this BEFORE tracking an event to validate the user can receive the reward.
 
-⚠️ **Note**: This endpoint may require backend verification. The implementation may need to aggregate data from event configuration and user history.
+**Implementation Note**: Eligibility checking requires event configuration (maxClaims, cooldown, reward) and user claim history. If the endpoint is unavailable, eligibility can be determined by:
+1. Calling \`loyalteez_get_event_config\` to get event settings
+2. Checking user's claim count against maxClaims
+3. Verifying cooldown period has elapsed
 
 See also: loyalteez://docs/api/rest-api`,
     inputSchema: {
@@ -115,7 +120,11 @@ function getUserStatsTool(_apiClient: LoyalteezAPIClient): Tool {
     name: 'loyalteez_get_user_stats',
     description: `Get comprehensive stats for a single user including balance, lifetime earnings, streak, activity, and rank.
 
-⚠️ **Note**: This endpoint aggregates data from multiple services (streaks, leaderboards, achievements). The implementation may need adjustment based on actual backend structure.
+**Implementation Note**: User stats aggregate data from multiple services. If the aggregation endpoint is unavailable, stats can be obtained by calling:
+- \`loyalteez_get_streak_status\` for streak data
+- \`loyalteez_get_leaderboard\` for rank and lifetime earnings
+- \`loyalteez_get_user_balance\` for balance
+- Platform-specific APIs for activity (messages, voice, reactions)
 
 See also: loyalteez://docs/shared-services/leaderboard-service`,
     inputSchema: {
