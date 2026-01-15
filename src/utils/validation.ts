@@ -9,7 +9,7 @@ import { z } from 'zod';
  */
 export const brandIdSchema = z
   .string()
-  .regex(/^0x[a-f0-9]{40}$/, 'Brand ID must be a valid Ethereum address (42 characters, lowercase)')
+  .regex(/^0x[a-fA-F0-9]{40}$/, 'Brand ID must be a valid Ethereum address (42 characters, starting with 0x)')
   .transform((val) => val.toLowerCase());
 
 /**

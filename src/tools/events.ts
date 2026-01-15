@@ -6,11 +6,11 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { LoyalteezAPIClient } from '../utils/api-client.js';
 import {
-  validateBrandId,
   validateEventDefinition,
   validateEventType,
   validateUserIdentifier,
 } from '../utils/validation.js';
+import { getBrandId } from '../utils/brand-id.js';
 
 /**
  * Register event management tools
@@ -20,6 +20,9 @@ export function registerEventTools(apiClient: LoyalteezAPIClient): Tool[] {
     createEventTool(apiClient),
     createEventsBatchTool(apiClient),
     trackEventTool(apiClient),
+    getEventConfigTool(apiClient),
+    bulkEventsTool(apiClient),
+    adminRewardTool(apiClient),
   ];
 }
 
@@ -37,7 +40,7 @@ See also: loyalteez://docs/guides/custom-events`,
       properties: {
         brandId: {
           type: 'string',
-          description: 'Your brand wallet address (must be valid Ethereum address, lowercase)',
+          description: 'Your brand wallet address (must be valid Ethereum address, lowercase). If not provided, uses LOYALTEEZ_BRAND_ID environment variable.',
         },
         event: {
           type: 'object',
@@ -100,7 +103,7 @@ See also: loyalteez://docs/guides/custom-events`,
           required: ['name', 'description', 'defaultReward', 'maxClaimsPerUser'],
         },
       },
-      required: ['brandId', 'event'],
+      required: ['event'],
     },
   };
 }
@@ -119,7 +122,7 @@ See also: loyalteez://docs/guides/custom-events`,
       properties: {
         brandId: {
           type: 'string',
-          description: 'Your brand wallet address',
+          description: 'Your brand wallet address. If not provided, uses LOYALTEEZ_BRAND_ID environment variable.',
         },
         platform: {
           type: 'string',
@@ -141,7 +144,7 @@ See also: loyalteez://docs/guides/custom-events`,
           },
         },
       },
-      required: ['brandId', 'platform', 'events'],
+      required: ['platform', 'events'],
     },
   };
 }
@@ -160,7 +163,7 @@ See also: loyalteez://docs/api/rest-api`,
       properties: {
         brandId: {
           type: 'string',
-          description: 'Your brand wallet address',
+          description: 'Your brand wallet address. If not provided, uses LOYALTEEZ_BRAND_ID environment variable.',
         },
         eventType: {
           type: 'string',
@@ -189,7 +192,7 @@ See also: loyalteez://docs/api/rest-api`,
           description: 'Additional event data',
         },
       },
-      required: ['brandId', 'eventType', 'userIdentifier'],
+      required: ['eventType', 'userIdentifier'],
     },
   };
 }
@@ -202,8 +205,8 @@ export async function handleCreateEvent(
   args: unknown
 ): Promise<CallToolResult> {
   try {
-    const params = args as { brandId: string; event: unknown };
-    const brandId = validateBrandId(params.brandId);
+    const params = args as { brandId?: string; event: unknown };
+    const brandId = getBrandId(params.brandId);
     const event = validateEventDefinition(params.event);
 
     // Generate eventType if not provided
@@ -267,7 +270,7 @@ export async function handleCreateEventsBatch(
       }>;
     };
 
-    const brandId = validateBrandId(params.brandId);
+    const brandId = getBrandId(params.brandId);
     const platform = params.platform;
     const events = params.events;
 
@@ -338,7 +341,7 @@ export async function handleTrackEvent(
       metadata?: Record<string, unknown>;
     };
 
-    const brandId = validateBrandId(params.brandId);
+    const brandId = getBrandId(params.brandId);
     const eventType = validateEventType(params.eventType);
     const userIdentifier = validateUserIdentifier(params.userIdentifier);
 
@@ -531,4 +534,284 @@ async function trackEvent(eventType, userIdentifier) {
 
 // Example usage:
 // await trackEvent('${events[0]?.eventType || 'custom_event'}', { email: 'user@example.com' });`;
+}
+
+/**
+ * Handle get_event_config tool call
+ */
+export async function handleGetEventConfig(
+  apiClient: LoyalteezAPIClient,
+  args: unknown
+): Promise<CallToolResult> {
+  try {
+    const params = args as { brandId?: string };
+    const brandId = getBrandId(params.brandId);
+
+    const result = await apiClient.getEventConfig({ brandId });
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Error getting event config: ${errorMessage}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
+/**
+ * Handle bulk_events tool call
+ */
+export async function handleBulkEvents(
+  apiClient: LoyalteezAPIClient,
+  args: unknown
+): Promise<CallToolResult> {
+  try {
+    const params = args as {
+      events: Array<{
+        brandId?: string;
+        eventType: string;
+        userEmail: string;
+        domain?: string;
+        sourceUrl?: string;
+        metadata?: Record<string, unknown>;
+      }>;
+    };
+
+    // Use first event's brandId or environment variable as default
+    const defaultBrandId = params.events[0]?.brandId
+      ? getBrandId(params.events[0].brandId)
+      : getBrandId();
+
+    // Ensure all events have brandId
+    const events = params.events.map((event) => ({
+      ...event,
+      brandId: event.brandId ? getBrandId(event.brandId) : defaultBrandId,
+    }));
+
+    const result = await apiClient.bulkEvents({ events });
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Error processing bulk events: ${errorMessage}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
+/**
+ * Handle admin_reward tool call
+ */
+export async function handleAdminReward(
+  apiClient: LoyalteezAPIClient,
+  args: unknown
+): Promise<CallToolResult> {
+  try {
+    const params = args as {
+      brandId?: string;
+      adminId: string;
+      targetUserId: string;
+      platform: string;
+      eventType: string;
+      amount?: number;
+      reason?: string;
+      publicMessage?: boolean;
+    };
+
+    const brandId = getBrandId(params.brandId);
+
+    // Determine user email from targetUserId
+    let userEmail: string;
+    if (params.targetUserId.includes('@')) {
+      userEmail = params.targetUserId;
+    } else {
+      userEmail = `${params.platform}_${params.targetUserId}@loyalteez.app`;
+    }
+
+    // Track the event with admin context
+    const result = await apiClient.trackEvent({
+      brandId,
+      eventType: params.eventType,
+      userEmail,
+      userIdentifier: userEmail,
+      metadata: {
+        adminId: params.adminId,
+        reason: params.reason,
+        publicMessage: params.publicMessage,
+        amount: params.amount,
+        adminReward: true,
+      },
+    });
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              success: result.success,
+              rewardAmount: params.amount || result.rewardAmount,
+              targetBalance: 0, // Would need to fetch from API
+              publicEmbed: params.publicMessage
+                ? {
+                    title: 'Admin Reward',
+                    description: `${params.reason || 'Special contribution'}`,
+                    reward: params.amount || result.rewardAmount,
+                  }
+                : undefined,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Error processing admin reward: ${errorMessage}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
+/**
+ * Get event configuration tool
+ */
+function getEventConfigTool(_apiClient: LoyalteezAPIClient): Tool {
+  return {
+    name: 'loyalteez_get_event_config',
+    description: `Get all active event configurations for a brand, including custom events, reward amounts, and detection methods. Use this to understand what events are available and how much LTZ each event rewards.
+
+See also: loyalteez://docs/api/rest-api`,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        brandId: {
+          type: 'string',
+          description: 'Your brand wallet address. If not provided, uses LOYALTEEZ_BRAND_ID environment variable.',
+        },
+      },
+      required: [],
+    },
+  };
+}
+
+/**
+ * Bulk events tool (for batch tracking)
+ */
+function bulkEventsTool(_apiClient: LoyalteezAPIClient): Tool {
+  return {
+    name: 'loyalteez_bulk_events',
+    description: `Submit multiple events in a single request. Use this for batch processing, importing historical data, or high-volume integrations. More efficient than calling track_event multiple times.
+
+See also: loyalteez://docs/api/rest-api`,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        events: {
+          type: 'array',
+          description: 'Array of events to process (max 100)',
+          items: {
+            type: 'object',
+            properties: {
+              brandId: {
+                type: 'string',
+                description: 'Brand wallet address (can be omitted if same for all events)',
+              },
+              eventType: { type: 'string' },
+              userEmail: { type: 'string', format: 'email' },
+              domain: { type: 'string' },
+              sourceUrl: { type: 'string' },
+              metadata: { type: 'object' },
+            },
+            required: ['eventType', 'userEmail'],
+          },
+          maxItems: 100,
+        },
+      },
+      required: ['events'],
+    },
+  };
+}
+
+/**
+ * Admin reward tool
+ */
+function adminRewardTool(_apiClient: LoyalteezAPIClient): Tool {
+  return {
+    name: 'loyalteez_admin_reward',
+    description: `Manually reward users (mod/admin triggered). Wrapper around track_event with admin context. Use this when admins want to manually reward users for special contributions.
+
+See also: loyalteez://docs/api/rest-api`,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        brandId: {
+          type: 'string',
+          description: 'Your brand wallet address. If not provided, uses LOYALTEEZ_BRAND_ID environment variable.',
+        },
+        adminId: {
+          type: 'string',
+          description: "Admin's platform ID (for audit trail)",
+        },
+        targetUserId: {
+          type: 'string',
+          description: 'Target user identifier (platform_userId or email)',
+        },
+        platform: {
+          type: 'string',
+          description: 'Platform: "discord" | "telegram" | "web" | etc.',
+        },
+        eventType: {
+          type: 'string',
+          description: 'Event type to trigger (e.g., "helpful_answer", "special_contribution")',
+        },
+        amount: {
+          type: 'number',
+          description: 'Override configured reward amount (optional)',
+        },
+        reason: {
+          type: 'string',
+          description: 'Reason for manual reward (for logging)',
+        },
+        publicMessage: {
+          type: 'boolean',
+          description: 'Whether to send public notification (default: false)',
+        },
+      },
+      required: ['targetUserId', 'platform', 'eventType'],
+    },
+  };
 }

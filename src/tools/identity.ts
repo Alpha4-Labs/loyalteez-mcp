@@ -5,7 +5,8 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { LoyalteezAPIClient } from '../utils/api-client.js';
-import { validateBrandId, platformSchema } from '../utils/validation.js';
+import { platformSchema } from '../utils/validation.js';
+import { getBrandId } from '../utils/brand-id.js';
 import { z } from 'zod';
 
 /**
@@ -29,7 +30,7 @@ See also: loyalteez://docs/architecture`,
       properties: {
         brandId: {
           type: 'string',
-          description: 'Your brand wallet address',
+          description: 'Your brand wallet address. If not provided, uses LOYALTEEZ_BRAND_ID environment variable.',
         },
         platform: {
           type: 'string',
@@ -45,7 +46,7 @@ See also: loyalteez://docs/architecture`,
           description: 'Platform username (for display)',
         },
       },
-      required: ['brandId', 'platform', 'platformUserId'],
+      required: ['platform', 'platformUserId'],
     },
   };
 }
@@ -59,13 +60,13 @@ export async function handleResolveUser(
 ): Promise<CallToolResult> {
   try {
     const params = z.object({
-      brandId: z.string(),
+      brandId: z.string().optional(),
       platform: platformSchema,
       platformUserId: z.string(),
       platformUsername: z.string().optional(),
     }).parse(args);
 
-    const brandId = validateBrandId(params.brandId);
+    const brandId = getBrandId(params.brandId);
     const platform = params.platform;
     const platformUserId = params.platformUserId;
 

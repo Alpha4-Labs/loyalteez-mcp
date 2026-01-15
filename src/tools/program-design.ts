@@ -5,7 +5,8 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { LoyalteezAPIClient } from '../utils/api-client.js';
-import { validateBrandId, validateProgramContext } from '../utils/validation.js';
+import { validateProgramContext } from '../utils/validation.js';
+import { getBrandId } from '../utils/brand-id.js';
 import { loadDocumentation, searchDocs, type DocIndex } from '../utils/doc-loader.js';
 import type { EventDefinition, ProgramDesign, ImplementationCode } from '../types/index.js';
 
@@ -36,7 +37,7 @@ See also:
       properties: {
         brandId: {
           type: 'string',
-          description: 'Your brand wallet address',
+          description: 'Your brand wallet address. If not provided, uses LOYALTEEZ_BRAND_ID environment variable.',
         },
         context: {
           type: 'object',
@@ -77,7 +78,7 @@ See also:
           required: ['appType', 'goals', 'platforms'],
         },
       },
-      required: ['brandId', 'context'],
+      required: ['context'],
     },
   };
 }
@@ -91,7 +92,7 @@ export async function handleDesignProgram(
 ): Promise<CallToolResult> {
   try {
     const params = args as {
-      brandId: string;
+      brandId?: string;
       context: {
         appType: string;
         goals: string[];
@@ -102,7 +103,7 @@ export async function handleDesignProgram(
       };
     };
 
-    const brandId = validateBrandId(params.brandId);
+    const brandId = getBrandId(params.brandId);
     const context = validateProgramContext(params.context);
 
     // Load relevant documentation for context
