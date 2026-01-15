@@ -262,7 +262,9 @@ export class LoyalteezAPIClient {
   }
 
   /**
-   * Get user balance (may require new API endpoint)
+   * Get user balance
+   * Note: This endpoint may need to query blockchain directly or aggregate from multiple services
+   * Current implementation attempts API call - may need adjustment based on actual backend
    */
   async getUserBalance(params: {
     brandId: string;
@@ -279,8 +281,7 @@ export class LoyalteezAPIClient {
       timestamp: string;
     }>;
   }> {
-    // Note: This may require a new API endpoint
-    // For now, return placeholder structure
+    // Attempt to call API endpoint - may need to be implemented via blockchain query or shared services
     const url = `${this.getBaseUrl('eventHandler')}/loyalteez-api/user-balance`;
     return this.request(url, {
       method: 'POST',
@@ -289,7 +290,9 @@ export class LoyalteezAPIClient {
   }
 
   /**
-   * Check eligibility (may require new API endpoint)
+   * Check eligibility for an event
+   * Note: This endpoint may need to query event config and user history
+   * Current implementation attempts API call - may need adjustment based on actual backend
    */
   async checkEligibility(params: {
     brandId: string;
@@ -303,7 +306,7 @@ export class LoyalteezAPIClient {
     maxClaims: number;
     rewardAmount: number;
   }> {
-    // Note: This may require a new API endpoint
+    // Attempt to call API endpoint - may need to aggregate from event config + user history
     const url = `${this.getBaseUrl('eventHandler')}/loyalteez-api/check-eligibility`;
     return this.request(url, {
       method: 'POST',
@@ -313,6 +316,8 @@ export class LoyalteezAPIClient {
 
   /**
    * Get user stats (aggregates from multiple services)
+   * Note: This aggregates data from shared services (streaks, leaderboards, achievements)
+   * Current implementation attempts shared services endpoint - may need adjustment
    */
   async getUserStats(params: {
     brandId: string;
@@ -339,8 +344,8 @@ export class LoyalteezAPIClient {
       global: number;
     };
   }> {
-    // Aggregate from multiple services
-    const url = `${this.getBaseUrl('services')}/user-stats/${params.brandId}/${params.userIdentifier}`;
+    // Attempt to call shared services endpoint - aggregates from multiple services
+    const url = `${this.getBaseUrl('services')}/user-stats/${params.brandId}/${encodeURIComponent(params.userIdentifier)}`;
     return this.request(url, {
       method: 'GET',
     });
