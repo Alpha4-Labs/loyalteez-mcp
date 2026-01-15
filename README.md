@@ -168,9 +168,15 @@ All developer documentation is available as MCP resources with URIs like:
 
 - **Contracts**: `loyalteez://contracts/ltz-token`, `loyalteez://contracts/perk-nft`, `loyalteez://contracts/points-sale`, `loyalteez://contracts/all`
 - **Network**: `loyalteez://network/config` - Soneium network configuration
-- **Event Types**: `loyalteez://events/standard` - Standard event types reference
+- **Event Types**: `loyalteez://events/standard` - Standard event types reference (includes channel constraints and domain validation)
 - **Shared Services**: `loyalteez://shared-services/endpoints` - API endpoints for gamification services
 - **OAuth Providers**: `loyalteez://platforms/mappings` - OAuth provider ID formats
+- **Error Codes**: `loyalteez://errors/codes` - Complete HTTP status codes and error response reference
+- **Error Handling**: `loyalteez://errors/handling` - Error handling patterns and best practices
+- **Rate Limits**: `loyalteez://rate-limits/endpoints` - Rate limits by endpoint with reset periods
+- **Rate Limit Strategies**: `loyalteez://rate-limits/strategies` - Code examples for handling rate limits
+- **SDK Methods**: `loyalteez://sdk/methods` - JavaScript SDK method reference with examples
+- **SDK Examples**: `loyalteez://sdk/examples` - SDK usage examples for React, Vue, Next.js
 
 ## Example Usage
 
@@ -287,7 +293,10 @@ loyalteez-mcp/
 │   │   ├── network.ts
 │   │   ├── event-types.ts
 │   │   ├── shared-services.ts
-│   │   └── oauth.ts
+│   │   ├── oauth.ts
+│   │   ├── errors.ts
+│   │   ├── rate-limits.ts
+│   │   └── sdk.ts
 │   ├── utils/                 # Utilities
 │   │   ├── api-client.ts
 │   │   ├── brand-id.ts
