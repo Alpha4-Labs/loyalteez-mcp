@@ -151,6 +151,46 @@ const EVENT_TYPES = {
     description: 'Understanding max_claims_per_user',
     clarification: 'For events: max_claims is per-user limit. For reaction drops: event max_claims becomes total drop limit. Use 999999 or -1 for unlimited (both normalized to unlimited).',
   },
+  channelConstraints: {
+    description: 'Discord events can have channel constraints that restrict where events can be triggered',
+    example: {
+      eventType: 'helpful_answer',
+      detectionConfig: {
+        channels: ['#support', '#help', '#general'],
+      },
+      behavior: 'Event only triggers if channel_id matches one of the allowed channels. If channel_id not provided, event is processed without validation.',
+    },
+    usage: 'When tracking Discord events with channel constraints, include channel_id parameter in track_event call',
+    codeExample: `
+// Discord event with channel constraint
+await loyalteez_track_event({
+  brandId: '0x...',
+  eventType: 'helpful_answer',
+  userIdentifier: { platform: 'discord', platformUserId: '123456789' },
+  channelId: '123456789012345678', // Discord channel ID
+  metadata: { messageId: '987654321' }
+});`,
+  },
+  domainValidation: {
+    description: 'Web events require domain validation for security',
+    requirements: [
+      'Domain must be added in Partner Portal → Settings → Domain Configuration',
+      'Domain is extracted from: domain field → sourceUrl → Origin header',
+      'Returns 403 if domain is not authorized for the brand',
+    ],
+    example: {
+      correct: {
+        domain: 'example.com',
+        sourceUrl: 'https://example.com/signup',
+        note: 'Domain matches configured domain in Partner Portal',
+      },
+      incorrect: {
+        domain: 'evil.com',
+        sourceUrl: 'https://evil.com/signup',
+        note: 'Domain not authorized → Returns 403 Forbidden',
+      },
+    },
+  },
 };
 
 /**

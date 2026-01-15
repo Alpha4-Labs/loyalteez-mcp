@@ -79,6 +79,7 @@ export class LoyalteezAPIClient {
     domain?: string;
     sourceUrl?: string;
     metadata?: Record<string, unknown>;
+    channelId?: string;
   }): Promise<{
     success: boolean;
     eventId: string;
@@ -89,9 +90,14 @@ export class LoyalteezAPIClient {
     transactionHash?: string;
   }> {
     const url = `${this.getBaseUrl('eventHandler')}/loyalteez-api/manual-event`;
+    const { channelId, ...restParams } = params;
+    const requestBody: Record<string, unknown> = { ...restParams };
+    if (channelId) {
+      requestBody.channel_id = channelId;
+    }
     return this.request(url, {
       method: 'POST',
-      body: JSON.stringify(params),
+      body: JSON.stringify(requestBody),
     });
   }
 

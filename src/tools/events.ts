@@ -191,6 +191,18 @@ See also: loyalteez://docs/api/rest-api`,
           type: 'object',
           description: 'Additional event data',
         },
+        domain: {
+          type: 'string',
+          description: 'Your website domain (required for web events). Must match configured domain in Partner Portal. If not provided, extracted from sourceUrl or Origin header.',
+        },
+        sourceUrl: {
+          type: 'string',
+          description: 'URL where event occurred (must be HTTP/HTTPS, max 2048 chars)',
+        },
+        channelId: {
+          type: 'string',
+          description: 'Discord channel ID or name where event occurred (for Discord events with channel constraints). If event has channel constraints configured, this must match an allowed channel.',
+        },
       },
       required: ['eventType', 'userIdentifier'],
     },
@@ -331,7 +343,7 @@ export async function handleTrackEvent(
 ): Promise<CallToolResult> {
   try {
     const params = args as {
-      brandId: string;
+      brandId?: string;
       eventType: string;
       userIdentifier: {
         email?: string;
@@ -339,6 +351,9 @@ export async function handleTrackEvent(
         platformUserId?: string;
       };
       metadata?: Record<string, unknown>;
+      domain?: string;
+      sourceUrl?: string;
+      channelId?: string;
     };
 
     const brandId = getBrandId(params.brandId);
@@ -361,6 +376,9 @@ export async function handleTrackEvent(
       eventType,
       userEmail,
       userIdentifier: userEmail,
+      domain: params.domain,
+      sourceUrl: params.sourceUrl,
+      channelId: params.channelId,
       metadata: params.metadata,
     });
 
