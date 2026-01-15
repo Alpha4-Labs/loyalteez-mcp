@@ -10,6 +10,9 @@ dist/
 .env.local
 .env.*.local
 
+# npm config (may contain tokens)
+.npmrc
+
 # IDE
 .vscode/
 .idea/

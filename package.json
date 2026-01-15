@@ -1,5 +1,5 @@
 {
-  "name": "@loyalteez/mcp-server",
+  "name": "@alpha4-labs/mcp-server",
   "version": "1.0.0",
   "description": "Model Context Protocol server for Loyalteez - AI-native loyalty program design and management",
   "main": "dist/index.js",
