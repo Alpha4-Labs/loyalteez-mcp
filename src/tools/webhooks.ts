@@ -96,10 +96,29 @@ export async function handleValidateWebhook(
       .update(params.payload)
       .digest('hex');
 
-    const isValid = crypto.timingSafeEqual(
-      Buffer.from(params.signature),
-      Buffer.from(expectedSignature)
-    );
+    // Handle both formats: raw hex or whsec_ prefixed
+    let receivedSig = params.signature;
+    if (receivedSig.startsWith('whsec_')) {
+      receivedSig = receivedSig.slice(6); // Remove 'whsec_' prefix
+    }
+
+    // Normalize both to hex for comparison
+    // Handle empty or invalid signatures gracefully
+    let isValid = false;
+    try {
+      if (receivedSig && receivedSig.length > 0 && expectedSignature.length > 0) {
+        const receivedBuffer = Buffer.from(receivedSig, 'hex');
+        const expectedBuffer = Buffer.from(expectedSignature, 'hex');
+        
+        // Only compare if buffers are same length (timingSafeEqual requirement)
+        if (receivedBuffer.length === expectedBuffer.length) {
+          isValid = crypto.timingSafeEqual(receivedBuffer, expectedBuffer);
+        }
+      }
+    } catch {
+      // Invalid hex or other error - signature is invalid
+      isValid = false;
+    }
 
     return {
       content: [

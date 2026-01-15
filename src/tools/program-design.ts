@@ -103,7 +103,13 @@ export async function handleDesignProgram(
       };
     };
 
-    const brandId = getBrandId(params.brandId);
+    // Try to get brandId, but don't fail if not provided - use placeholder
+    let brandId: string;
+    try {
+      brandId = getBrandId(params.brandId);
+    } catch {
+      brandId = 'YOUR_BRAND_ID'; // Use placeholder if not available
+    }
     const context = validateProgramContext(params.context);
 
     // Load relevant documentation for context

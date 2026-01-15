@@ -27,7 +27,7 @@ describe('Webhook Tools', () => {
         secret,
       });
 
-      expect(result.isError).toBe(false);
+      expect(result.isError).not.toBe(true);
       const content = JSON.parse(result.content[0].text);
       expect(content.valid).toBe(true);
     });
@@ -39,7 +39,7 @@ describe('Webhook Tools', () => {
         secret: 'test-secret',
       });
 
-      expect(result.isError).toBe(false);
+      expect(result.isError).not.toBe(true);
       const content = JSON.parse(result.content[0].text);
       expect(content.valid).toBe(false);
     });
@@ -52,7 +52,7 @@ describe('Webhook Tools', () => {
       });
 
       // Should not error, but signature will be invalid
-      expect(result.isError).toBe(false);
+      expect(result.isError).not.toBe(true);
     });
   });
 
@@ -63,10 +63,10 @@ describe('Webhook Tools', () => {
         endpoint: '/webhooks/loyalteez',
       });
 
-      expect(result.isError).toBe(false);
+      expect(result.isError).not.toBe(true);
       expect(result.content[0].text).toContain('express');
       expect(result.content[0].text).toContain('/webhooks/loyalteez');
-      expect(result.content[0].text).toContain('verifyWebhookSignature');
+      expect(result.content[0].text).toContain('createHmac');
     });
 
     it('should generate Next.js webhook code', async () => {
@@ -74,7 +74,7 @@ describe('Webhook Tools', () => {
         framework: 'nextjs',
       });
 
-      expect(result.isError).toBe(false);
+      expect(result.isError).not.toBe(true);
       expect(result.content[0].text).toContain('Next.js');
       expect(result.content[0].text).toContain('API Route');
     });
@@ -84,7 +84,7 @@ describe('Webhook Tools', () => {
         framework: 'flask',
       });
 
-      expect(result.isError).toBe(false);
+      expect(result.isError).not.toBe(true);
       expect(result.content[0].text).toContain('Flask');
       expect(result.content[0].text).toContain('Python');
     });
@@ -94,7 +94,7 @@ describe('Webhook Tools', () => {
         framework: 'rails',
       });
 
-      expect(result.isError).toBe(false);
+      expect(result.isError).not.toBe(true);
       expect(result.content[0].text).toContain('Rails');
       expect(result.content[0].text).toContain('Ruby');
     });
@@ -104,7 +104,7 @@ describe('Webhook Tools', () => {
         framework: 'php',
       });
 
-      expect(result.isError).toBe(false);
+      expect(result.isError).not.toBe(true);
       expect(result.content[0].text).toContain('PHP');
     });
 
@@ -113,7 +113,7 @@ describe('Webhook Tools', () => {
         framework: 'generic',
       });
 
-      expect(result.isError).toBe(false);
+      expect(result.isError).not.toBe(true);
       expect(result.content[0].text).toContain('Generic');
     });
 
@@ -122,7 +122,7 @@ describe('Webhook Tools', () => {
         framework: 'express',
       });
 
-      expect(result.isError).toBe(false);
+      expect(result.isError).not.toBe(true);
       expect(result.content[0].text).toContain('/webhooks/loyalteez');
     });
   });

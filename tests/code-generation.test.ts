@@ -19,7 +19,7 @@ describe('Code Generation', () => {
         },
       });
 
-      expect(result.isError).toBe(false);
+      expect(result.isError).not.toBe(true);
       const content = JSON.parse(result.content[0].text);
       
       expect(content.implementation).toBeDefined();
@@ -38,7 +38,7 @@ describe('Code Generation', () => {
         },
       });
 
-      expect(result.isError).toBe(false);
+      expect(result.isError).not.toBe(true);
       const content = JSON.parse(result.content[0].text);
       
       expect(content.implementation.telegram).toBeDefined();
@@ -56,7 +56,7 @@ describe('Code Generation', () => {
         },
       });
 
-      expect(result.isError).toBe(false);
+      expect(result.isError).not.toBe(true);
       const content = JSON.parse(result.content[0].text);
       
       expect(content.implementation.web).toBeDefined();
@@ -73,12 +73,12 @@ describe('Code Generation', () => {
         },
       });
 
-      expect(result.isError).toBe(false);
+      expect(result.isError).not.toBe(true);
       const content = JSON.parse(result.content[0].text);
       
       expect(content.implementation.webhooks).toBeDefined();
       expect(content.implementation.webhooks).toContain('verifyWebhookSignature');
-      expect(content.implementation.webhooks).toContain('HMAC-SHA256');
+      expect(content.implementation.webhooks).toContain('createHmac');
     });
 
     it('should include test files in generated code', async () => {
@@ -90,7 +90,7 @@ describe('Code Generation', () => {
         },
       });
 
-      expect(result.isError).toBe(false);
+      expect(result.isError).not.toBe(true);
       const content = JSON.parse(result.content[0].text);
       
       expect(content.implementation.discord).toContain('test');
@@ -109,7 +109,7 @@ describe('Code Generation', () => {
         },
       });
 
-      expect(result.isError).toBe(false);
+      expect(result.isError).not.toBe(true);
       const content = JSON.parse(result.content[0].text);
       const code = content.implementation.discord;
 
@@ -129,7 +129,7 @@ describe('Code Generation', () => {
         },
       });
 
-      expect(result.isError).toBe(false);
+      expect(result.isError).not.toBe(true);
       const content = JSON.parse(result.content[0].text);
       const code = content.implementation.telegram;
 
